@@ -1,0 +1,16 @@
+*
+!bff/
+!bff/package.json
+!bff/package-lock.json
+!bff/codegen.yml
+!bff/tsconfig.json
+!bff/schema/
+!bff/schema/**
+!bff/src/
+!bff/src/**
+bff/src/generated/
+!backend/
+!backend/src/
+!backend/src/main/
+!backend/src/main/proto/
+!backend/src/main/proto/**

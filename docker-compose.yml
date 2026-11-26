@@ -35,6 +35,19 @@ services:
     networks:
       - frame-inventory
 
+  bff:
+    build:
+      context: ./src
+      dockerfile: bff/Dockerfile
+    ports:
+      - "127.0.0.1:4000:4000"
+    environment:
+      FRAME_GRPC_ENDPOINT: ${FRAME_GRPC_ENDPOINT:-backend:9090}
+    depends_on:
+      - backend
+    networks:
+      - frame-inventory
+
   frontend:
     build:
       context: ./src/frontend

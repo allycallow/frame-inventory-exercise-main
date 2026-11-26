@@ -25,7 +25,7 @@ If you have `just` installed, run `just` to list the available recipes.
 
 ## Subdirectories & System Boundaries
 
-- [Application source](./src/README.md) contains the Java 21 and Spring Boot 3.5 backend and the Next.js, React 19, and TypeScript frontend.
+- [Application source](./src/README.md) contains the Spring Boot backend, Apollo Server BFF, and Next.js frontend.
 - [Design system](./design-system/README.md) contains the prototype, sample frame data, and visual conventions for the exercise.
 
 ## Services
@@ -35,6 +35,7 @@ If you have `just` installed, run `just` to list the available recipes.
 | Service               | Host port | Container port | Notes                                                  |
 |-----------------------|-----------|----------------|--------------------------------------------------------|
 | frontend              | 3000      | 3000           | Next.js dev server, proxies `/api` to the backend     |
+| bff                   | 4000      | 4000           | Apollo Sandbox and the frame inventory GraphQL API     |
 | backend               | 8080      | 8080           | Spring Boot, exposes `GET /api/health`                 |
 | postgres              | 5432      | 5432           | Spring Boot applies the inventory schema via Flyway    |
 | opensearch            | 9200, 9600 | 9200, 9600    | Single-node, security plugin disabled for local use    |
@@ -81,10 +82,11 @@ Run `pre-commit run --all-files` to check the whole repository.
 
 ### Smoke test
 
-Once the stack is up, check both entry points.
+Once the stack is up, check the service entry points.
 
 - Open <http://localhost:3000> &mdash; the page calls `/api/health` and prints the JSON response.
 - Hit the backend directly: <http://localhost:8080/api/health>.
+- Open [Apollo Sandbox](http://127.0.0.1:4000) and run the [frame list query](./src/bff/README.md).
 
 ### Backend metrics
 
