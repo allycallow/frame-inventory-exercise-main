@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8CFC9QPMQBETNNZJKFEZPKQ",
+  "strategy": "manual-commit",
+  "branch": "alex/glo-29-wire-import-rpcs-into-the-bff-build-and-graphql",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "src/backend/README.md",
+    "src/bff/src/frame-client.ts",
+    "src/bff/src/index.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 153,
+    "cache_creation_tokens": 29997,
+    "cache_read_tokens": 12573613,
+    "output_tokens": 12528,
+    "api_call_count": 51
+  },
+  "redaction": {
+    "replacements": 50,
+    "layers": {
+      "betterleaks": 1,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 30,
+      "credentialed_uri": 0,
+      "entropy": 19,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8CFC9QPMQBETNNZJKFEZPKQ",
+  "session_id": "01a21892-b48b-7e40-8f58-222ecc9cd896",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-26T17:45:16.157194Z",
+  "branch": "alex/glo-29-wire-import-rpcs-into-the-bff-build-and-graphql",
+  "checkpoints_count": 4,
+  "save_step_count": 71,
+  "files_touched": [
+    "src/backend/README.md",
+    "src/bff/src/frame-client.ts",
+    "src/bff/src/index.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "f92c67c61ed5",
+  "checkpoint_transcript_start": 2477,
+  "transcript_lines_at_start": 2477,
+  "compact_transcript_start": 508,
+  "token_usage": {
+    "input_tokens": 153,
+    "cache_creation_tokens": 29997,
+    "cache_read_tokens": 12573613,
+    "output_tokens": 12528,
+    "api_call_count": 51
+  },
+  "session_token_usage": {
+    "input_tokens": 14212,
+    "cache_creation_tokens": 261846,
+    "cache_read_tokens": 61690184,
+    "output_tokens": 81083,
+    "api_call_count": 396,
+    "subagent_tokens": {
+      "input_tokens": 570559,
+      "cache_creation_tokens": 0,
+      "cache_read_tokens": 6929337,
+      "output_tokens": 36658,
+      "api_call_count": 163
+    },
+    "subagent_tokens_complete": true
+  },
+  "redaction": {
+    "replacements": 50,
+    "layers": {
+      "betterleaks": 1,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 30,
+      "credentialed_uri": 0,
+      "entropy": 19,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 71
+  }
+}
