@@ -7,6 +7,7 @@ import {
 } from '@grpc/grpc-js'
 import { ConstantBackoff, handleWhen, retry } from 'cockatiel'
 import { GraphQLError } from 'graphql'
+import { randomUUID } from 'node:crypto'
 import { Type } from 'protobufjs'
 import { GRAPHQL_ERROR_CODES } from './consts'
 import type { CreateFrameRequest } from './generated/frameinventory/v1/CreateFrameRequest'
@@ -23,6 +24,7 @@ import { logger } from './logger'
 
 type UnaryRpc<Request, Response> = (
   request: Request,
+  metadata: Metadata,
   options: CallOptions,
   callback: requestCallback<Response>,
 ) => void
@@ -139,13 +141,17 @@ export async function callFrameRpc<Request, Response>(
   method: string,
   rpc: UnaryRpc<Request, Response>,
   request: Request,
+  correlationId: string = randomUUID(),
   retryUnavailable = false,
 ): Promise<Response> {
+  const metadata = new Metadata()
+  metadata.set('x-correlation-id', correlationId)
+  const rpcLogger = logger.child({ correlationId })
   const startedAt = performance.now()
   const deadline = Date.now() + TIMEOUT_MS
   const call = () =>
     new Promise<Response>((resolve, reject) => {
-      rpc(request, { deadline }, (error, response) => {
+      rpc(request, metadata, { deadline }, (error, response) => {
         if (error) {
           reject(error)
         } else if (!response) {
@@ -160,7 +166,7 @@ export async function callFrameRpc<Request, Response>(
     const response = retryUnavailable
       ? await readRetry.execute(call, AbortSignal.timeout(TIMEOUT_MS))
       : await call()
-    logger.debug(
+    rpcLogger.debug(
       { method, durationMs: performance.now() - startedAt },
       'Frame RPC completed',
     )
@@ -171,7 +177,10 @@ export async function callFrameRpc<Request, Response>(
     if (grpcError) {
       const code = clientErrorCodes.get(grpcError.code)
       if (code) {
-        logger.debug({ method, grpcCode: grpcError.code }, 'Frame RPC rejected')
+        rpcLogger.debug(
+          { method, grpcCode: grpcError.code },
+          'Frame RPC rejected',
+        )
         const violations =
           grpcError.code === status.INVALID_ARGUMENT
             ? fieldViolations(error)
@@ -188,7 +197,7 @@ export async function callFrameRpc<Request, Response>(
         grpcError.code === status.UNAVAILABLE ||
         grpcError.code === status.DEADLINE_EXCEEDED
       ) {
-        logger.warn(
+        rpcLogger.warn(
           { method, grpcCode: grpcError.code },
           'Frame service is unavailable',
         )
@@ -198,7 +207,7 @@ export async function callFrameRpc<Request, Response>(
       }
     }
 
-    logger.error({ method, grpcCode: grpcError?.code }, 'Frame RPC failed')
+    rpcLogger.error({ method, grpcCode: grpcError?.code }, 'Frame RPC failed')
     throw new GraphQLError('Frame operation failed', {
       extensions: { code: GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR },
     })

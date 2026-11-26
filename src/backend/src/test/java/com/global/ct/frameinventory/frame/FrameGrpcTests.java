@@ -11,9 +11,11 @@ import com.google.protobuf.Empty;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.rpc.BadRequest;
 import com.google.rpc.ErrorInfo;
+import io.grpc.Metadata;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.protobuf.StatusProto;
+import io.grpc.stub.MetadataUtils;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
@@ -185,7 +187,11 @@ class FrameGrpcTests {
         create("FRM-2");
         delete(FRAME_ID, second);
         delete(FRAME_ID, null);
-        client.listFrames(ListFramesRequest.newBuilder().setPage(9).setSize(2).build());
+        var correlationId = "69b8e848-c107-42dd-9f38-646f1497b3de";
+        var headers = new Metadata();
+        headers.put(Metadata.Key.of("x-correlation-id", Metadata.ASCII_STRING_MARSHALLER), correlationId);
+        client.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers))
+            .listFrames(ListFramesRequest.newBuilder().setPage(9).setSize(2).build());
 
         transactions.executeWithoutResult(transaction -> {
             var attributes = FrameProtoMapper.toAttributes(FrameData.newBuilder().setStatus("LIVE").build());
@@ -211,7 +217,8 @@ class FrameGrpcTests {
             "\"message\":\"frame.soft_deleted\"", "\"frameId\":\"FRM-1\"", "\"closedVersionId\":" + second
         ));
         assertThat(logs).anySatisfy(line -> assertThat(line).contains(
-            "\"message\":\"frame.listed\"", "\"page\":9", "\"size\":2", "\"totalElements\":1"
+            "\"message\":\"frame.listed\"", "\"page\":9", "\"size\":2", "\"totalElements\":1",
+            "\"correlationId\":\"" + correlationId + "\""
         ));
         assertThat(logs).anySatisfy(line -> assertThat(line).contains(
             "\"message\":\"frame.version_checked\"", "\"level\":\"DEBUG\"",

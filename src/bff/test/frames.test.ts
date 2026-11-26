@@ -83,14 +83,15 @@ test('exposes backend field violations from gRPC status details', async () => {
     ),
   )
   const client = mockClient()
-  client.createFrame.mockImplementation((_request, _options, callback) =>
-    callback(
-      Object.assign(new Error('invalid'), {
-        code: status.INVALID_ARGUMENT,
-        details: 'One or more request values are invalid.',
-        metadata,
-      }),
-    ),
+  client.createFrame.mockImplementation(
+    (_request, _metadata, _options, callback) =>
+      callback(
+        Object.assign(new Error('invalid'), {
+          code: status.INVALID_ARGUMENT,
+          details: 'One or more request values are invalid.',
+          metadata,
+        }),
+      ),
   )
   const server = createServer(client)
   try {
@@ -148,14 +149,15 @@ test.each([
   const metadata = new Metadata()
   if (trailer) metadata.set('grpc-status-details-bin', trailer)
   const client = mockClient()
-  client.createFrame.mockImplementation((_request, _options, callback) =>
-    callback(
-      Object.assign(new Error('invalid'), {
-        code: status.INVALID_ARGUMENT,
-        details: 'invalid input',
-        metadata,
-      }),
-    ),
+  client.createFrame.mockImplementation(
+    (_request, _metadata, _options, callback) =>
+      callback(
+        Object.assign(new Error('invalid'), {
+          code: status.INVALID_ARGUMENT,
+          details: 'invalid input',
+          metadata,
+        }),
+      ),
   )
   const server = createServer(client)
   try {
@@ -209,12 +211,16 @@ test('exports resolver latency by schema field for queries and mutations', async
   const exporter = new PrometheusExporter({ preventServerStart: true })
   const provider = new MeterProvider({ readers: [exporter] })
   const client = mockClient()
-  client.listFrames.mockImplementation((_request, _options, callback) => {
-    callback(null, { items: [], page: 0, size: 25, hasNext: false })
-  })
-  client.deleteFrame.mockImplementation((_request, _options, callback) => {
-    callback(null, {})
-  })
+  client.listFrames.mockImplementation(
+    (_request, _metadata, _options, callback) => {
+      callback(null, { items: [], page: 0, size: 25, hasNext: false })
+    },
+  )
+  client.deleteFrame.mockImplementation(
+    (_request, _metadata, _options, callback) => {
+      callback(null, {})
+    },
+  )
   const server = createServer(client)
   server.addPlugin(
     createMetricsPlugin(provider.getMeter('frame-inventory-bff')),
@@ -290,7 +296,7 @@ test('frames requests the specified gRPC page and returns frames with pagination
   const client = {
     ...mockClient(),
     listFrames: jest.fn<FrameClient['listFrames']>(
-      (_request, _options, callback) => callback(null, page),
+      (_request, _metadata, _options, callback) => callback(null, page),
     ),
   }
   const server = createServer(client)
@@ -319,6 +325,7 @@ test('frames requests the specified gRPC page and returns frames with pagination
     expect(client.listFrames).toHaveBeenCalledTimes(1)
     expect(client.listFrames).toHaveBeenCalledWith(
       { page: 1, size: 1 },
+      expect.any(Metadata),
       { deadline: expect.any(Number) },
       expect.any(Function),
     )
@@ -367,7 +374,7 @@ test.each([
   }
 })
 
-test('frames retries an unavailable gRPC call with the same deadline', async () => {
+test('frames retries an unavailable gRPC call with the same deadline and correlation ID', async () => {
   const page = { items: [], page: 0, size: 25, hasNext: false }
   const error = Object.assign(new Error('Unavailable'), {
     code: status.UNAVAILABLE,
@@ -378,21 +385,29 @@ test('frames retries an unavailable gRPC call with the same deadline', async () 
     ...mockClient(),
     listFrames: jest
       .fn<FrameClient['listFrames']>()
-      .mockImplementationOnce((_request, _options, callback) => callback(error))
-      .mockImplementation((_request, _options, callback) =>
+      .mockImplementationOnce((_request, _metadata, _options, callback) =>
+        callback(error),
+      )
+      .mockImplementation((_request, _metadata, _options, callback) =>
         callback(null, page),
       ),
   }
   const server = createServer(client)
 
   try {
-    const response = await server.executeOperation({
-      query: '{ frames { page size hasNext } }',
-    })
+    const correlationId = '69b8e848-c107-42dd-9f38-646f1497b3de'
+    const response = await server.executeOperation(
+      { query: '{ frames { page size hasNext } }' },
+      { contextValue: { correlationId } },
+    )
 
     expect(client.listFrames).toHaveBeenCalledTimes(2)
-    const [, firstOptions] = client.listFrames.mock.calls[0]
-    const [, retryOptions] = client.listFrames.mock.calls[1]
+    const [, firstMetadata, firstOptions] = client.listFrames.mock.calls[0]
+    const [, retryMetadata, retryOptions] = client.listFrames.mock.calls[1]
+    expect(firstMetadata.get('x-correlation-id')).toEqual([correlationId])
+    expect(retryMetadata.get('x-correlation-id')).toEqual(
+      firstMetadata.get('x-correlation-id'),
+    )
     expect(retryOptions.deadline).toBe(firstOptions.deadline)
     expect(response.body).toMatchObject({
       kind: 'single',
@@ -425,7 +440,7 @@ test.each([
     const client = {
       ...mockClient(),
       listFrames: jest.fn<FrameClient['listFrames']>(
-        (_request, _options, callback) => callback(error),
+        (_request, _metadata, _options, callback) => callback(error),
       ),
     }
     const server = createServer(client)
@@ -466,23 +481,25 @@ test('frame reads and mutations forward the gRPC contract', async () => {
     linkedFrameIds: ['FRAME-002'],
   } satisfies Frame__Output
   const client = mockClient()
-  client.getFrame.mockImplementation((_request, _options, callback) =>
-    callback(null, frame),
+  client.getFrame.mockImplementation(
+    (_request, _metadata, _options, callback) => callback(null, frame),
   )
-  client.getFrameHistory.mockImplementation((_request, _options, callback) =>
-    callback(null, { versions: [frame] }),
+  client.getFrameHistory.mockImplementation(
+    (_request, _metadata, _options, callback) =>
+      callback(null, { versions: [frame] }),
   )
-  client.createFrame.mockImplementation((_request, _options, callback) =>
-    callback(null, frame),
+  client.createFrame.mockImplementation(
+    (_request, _metadata, _options, callback) => callback(null, frame),
   )
-  client.updateFrame.mockImplementation((_request, _options, callback) =>
-    callback(null, {
-      ...frame,
-      attributes: { ...frame.attributes, status: 'MAINTENANCE' },
-    }),
+  client.updateFrame.mockImplementation(
+    (_request, _metadata, _options, callback) =>
+      callback(null, {
+        ...frame,
+        attributes: { ...frame.attributes, status: 'MAINTENANCE' },
+      }),
   )
-  client.deleteFrame.mockImplementation((_request, _options, callback) =>
-    callback(null, {}),
+  client.deleteFrame.mockImplementation(
+    (_request, _metadata, _options, callback) => callback(null, {}),
   )
   const server = createServer(client)
 
@@ -611,8 +628,8 @@ test.each([
       details: 'gRPC failure',
       metadata: new Metadata(),
     })
-    client.updateFrame.mockImplementation((_request, _options, callback) =>
-      callback(error),
+    client.updateFrame.mockImplementation(
+      (_request, _metadata, _options, callback) => callback(error),
     )
     const server = createServer(client)
 

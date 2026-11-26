@@ -71,7 +71,7 @@ function formatTimestamp(timestamp: Timestamp__Output) {
 export function createFrameResolvers(client: FrameClient) {
   return {
     Query: {
-      frames(_parent, args) {
+      frames(_parent, args, { correlationId }) {
         const page = args.page ?? undefined
         const size = args.size ?? undefined
 
@@ -87,58 +87,84 @@ export function createFrameResolvers(client: FrameClient) {
           'ListFrames',
           client.listFrames.bind(client),
           { page, size },
+          correlationId,
           true,
         )
       },
-      frame(_parent, { frameId }) {
+      frame(_parent, { frameId }, { correlationId }) {
         validateFrameId(frameId)
         return callFrameRpc(
           'GetFrame',
           client.getFrame.bind(client),
           { frameId },
+          correlationId,
           true,
         )
       },
-      async frameHistory(_parent, { frameId }) {
+      async frameHistory(_parent, { frameId }, { correlationId }) {
         validateFrameId(frameId)
         const history = await callFrameRpc(
           'GetFrameHistory',
           client.getFrameHistory.bind(client),
           { frameId },
+          correlationId,
           true,
         )
         return history.versions
       },
     },
     Mutation: {
-      createFrame(_parent, { frameId, attributes }) {
+      createFrame(_parent, { frameId, attributes }, { correlationId }) {
         validateFrameId(frameId)
         if (frameId.length > 128) {
           throw badInput('Frame ID must be 128 characters or fewer.')
         }
-        return callFrameRpc('CreateFrame', client.createFrame.bind(client), {
-          frameId,
-          attributes: toFrameData(attributes),
-        })
+        return callFrameRpc(
+          'CreateFrame',
+          client.createFrame.bind(client),
+          {
+            frameId,
+            attributes: toFrameData(attributes),
+          },
+          correlationId,
+        )
       },
-      updateFrame(_parent, { frameId, expectedVersionId, attributes }) {
+      updateFrame(
+        _parent,
+        { frameId, expectedVersionId, attributes },
+        { correlationId },
+      ) {
         validateFrameId(frameId)
         validateVersionId(expectedVersionId)
-        return callFrameRpc('UpdateFrame', client.updateFrame.bind(client), {
-          frameId,
-          expectedVersionId,
-          attributes: toFrameData(attributes),
-        })
+        return callFrameRpc(
+          'UpdateFrame',
+          client.updateFrame.bind(client),
+          {
+            frameId,
+            expectedVersionId,
+            attributes: toFrameData(attributes),
+          },
+          correlationId,
+        )
       },
-      async deleteFrame(_parent, { frameId, expectedVersionId }) {
+      async deleteFrame(
+        _parent,
+        { frameId, expectedVersionId },
+        { correlationId },
+      ) {
         validateFrameId(frameId)
         if (expectedVersionId != null) {
           validateVersionId(expectedVersionId)
         }
-        await callFrameRpc('DeleteFrame', client.deleteFrame.bind(client), {
-          frameId,
-          expectedVersionId: expectedVersionId ?? undefined,
-        })
+        await callFrameRpc(
+          'DeleteFrame',
+          client.deleteFrame.bind(client),
+          {
+            frameId,
+            expectedVersionId: expectedVersionId ?? undefined,
+          },
+          correlationId,
+        )
         return true
       },
     },
