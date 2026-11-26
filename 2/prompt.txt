@@ -1,0 +1,30 @@
+Pick up GLO-36 — Verify and release the DELTA import flow.
+
+Repo: /Users/alexcallow/Sites/frame-inventory-exercise-main
+Linear: https://linear.app/upfrontbeats/issue/GLO-36/verify-and-release-the-delta-import-flow
+Design: docs/designs/bulk-csv-inventory-import-design.md
+
+Main was clean and up to date at 4d1104c. PR #22 merged the DELTA worker, and PR #23 merged the design docs. The worker already passed a local S3 → SQS → Temporal → PostgreSQL smoke test. The remaining check is the real browser-to-database flow on a fresh local stack, with the worker running and no seeded job results.
+
+1. Upload data/inventory_frame.csv through the UI. Verify 1,000 rows applied.
+2. Upload the same file again. Verify 1,000 unchanged, zero applied, and exactly 1,000 frame versions total.
+3. Upload a CSV with a validation error. Verify the row diagnostic appears in the UI and the rejected row does not change inventory.
+4. Open an imported frame’s history and follow its import-job link. Verify the job summary and counts match.
+
+Use the local-only operator token and the documented LocalStack and Temporal setup. Keep FULL_SNAPSHOT disabled. Don’t apply the existing handoff stash. Fix any in-scope blockers you find, report what passed, and flag anything that still needs AWS or release verification.
+
+---
+
+give me a list of whats left to do
+
+---
+
+nice lets do 1.
+
+---
+
+nice lets move on
+
+---
+
+nothing is setup for sign-in configuration leave for now
