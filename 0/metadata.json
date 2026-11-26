@@ -1,0 +1,57 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8BNEAFP89PX0VP9H39PY0GC",
+  "session_id": "01a21721-cb4d-7721-a909-e923b2dbaea7",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-26T10:11:58.335416Z",
+  "branch": "feat/frame-inventory-schema",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "docs/frame-inventory-schema/frame-inventory-schema.md",
+    "src/backend/README.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "71c84a7d1b2e",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 39,
+    "cache_creation_tokens": 6682,
+    "cache_read_tokens": 2026366,
+    "output_tokens": 3562,
+    "api_call_count": 13
+  },
+  "session_token_usage": {
+    "input_tokens": 17618,
+    "cache_creation_tokens": 163074,
+    "cache_read_tokens": 10479959,
+    "output_tokens": 30327,
+    "api_call_count": 100,
+    "subagent_tokens": {
+      "input_tokens": 221447,
+      "cache_creation_tokens": 0,
+      "cache_read_tokens": 3217781,
+      "output_tokens": 25231,
+      "api_call_count": 76
+    },
+    "subagent_tokens_complete": true
+  },
+  "redaction": {
+    "replacements": 14,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 3,
+      "credentialed_uri": 0,
+      "entropy": 11,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 9
+  }
+}
