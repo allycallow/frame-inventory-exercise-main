@@ -98,6 +98,10 @@ Once the stack is up, check both entry points.
   for HTTP and gRPC request rate, errors, p50, p95, and p99 latency, and resource saturation.
   Generate API traffic and allow at least two Prometheus scrapes for request graphs
   to populate.
+- The **Frame inventory activity** section shows committed creates, updates, and
+  soft deletes, plus successful gRPC reads and version conflicts. The totals cover
+  the dashboard time range. Rejected or rolled-back writes and repeated deletes
+  that change no data are excluded from the totals.
 
 Prometheus and Grafana listen on localhost. Their named volumes keep metrics
 and Grafana settings across restarts.

@@ -14,6 +14,7 @@ import com.google.rpc.ErrorInfo;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.protobuf.StatusProto;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,17 +69,19 @@ class FrameGrpcTests {
     private final DataSource dataSource;
     private final FrameService service;
     private final TransactionTemplate transactions;
+    private final MeterRegistry meters;
 
     @Autowired
     FrameGrpcTests(
         GrpcChannelFactory channels, JdbcClient jdbc, DataSource dataSource, FrameService service,
-        TransactionTemplate transactions
+        TransactionTemplate transactions, MeterRegistry meters
     ) {
         this.client = FrameManagementGrpc.newBlockingStub(channels.createChannel("local"));
         this.jdbc = jdbc;
         this.dataSource = dataSource;
         this.service = service;
         this.transactions = transactions;
+        this.meters = meters;
     }
 
     @BeforeEach
@@ -167,9 +170,13 @@ class FrameGrpcTests {
 
     @Test
     @ExtendWith(OutputCaptureExtension.class)
-    void logsCommittedLifecycleEventsAndTheFullCurrentCount(CapturedOutput output) {
+    void recordsCommittedLifecycleEventsAndLogsTheFullCurrentCount(CapturedOutput output) {
+        double createdBefore = lifecycleCount("created");
+        double updatedBefore = lifecycleCount("updated");
+        double deletedBefore = lifecycleCount("soft_deleted");
         long first = create(FRAME_ID).getVersionId();
         long second = client.updateFrame(edit(FRAME_ID, first, "PENDING")).getVersionId();
+        assertError(Status.Code.ABORTED, STALE, () -> client.updateFrame(edit(FRAME_ID, first, "BLOCKED")));
         assertError(Status.Code.ABORTED, STALE, () -> delete(FRAME_ID, first));
         assertError(Status.Code.ALREADY_EXISTS, RESERVED, () -> create(FRAME_ID));
         assertError(Status.Code.NOT_FOUND, MISSING, () -> get("MISSING"));
@@ -177,12 +184,20 @@ class FrameGrpcTests {
             () -> client.listFrames(ListFramesRequest.newBuilder().setSize(0).build()));
         create("FRM-2");
         delete(FRAME_ID, second);
+        delete(FRAME_ID, null);
         client.listFrames(ListFramesRequest.newBuilder().setPage(9).setSize(2).build());
 
         transactions.executeWithoutResult(transaction -> {
-            service.create("ROLLED-BACK", FrameProtoMapper.toAttributes(FrameData.newBuilder().setStatus("LIVE").build()));
+            var attributes = FrameProtoMapper.toAttributes(FrameData.newBuilder().setStatus("LIVE").build());
+            var created = service.create("ROLLED-BACK", attributes);
+            var updated = service.edit("ROLLED-BACK", created.versionId(), attributes);
+            service.delete("ROLLED-BACK", updated.versionId());
             transaction.setRollbackOnly();
         });
+
+        assertThat(lifecycleCount("created")).isEqualTo(createdBefore + 2);
+        assertThat(lifecycleCount("updated")).isEqualTo(updatedBefore + 1);
+        assertThat(lifecycleCount("soft_deleted")).isEqualTo(deletedBefore + 1);
 
         var logs = output.getOut().lines().toList();
         assertThat(logs).anySatisfy(line -> assertThat(line).contains(
@@ -216,7 +231,10 @@ class FrameGrpcTests {
                 "\"message\":\"frame.client_error\"", "\"level\":\"DEBUG\"", "\"grpcStatus\":\"" + status + "\""
             ));
         }
-        assertThat(output.getOut()).doesNotContain("\"frameId\":\"ROLLED-BACK\"", "SW1A 1AA");
+        assertThat(logs).noneMatch(line -> line.contains("\"frameId\":\"ROLLED-BACK\"")
+            && (line.contains("\"message\":\"frame.created\"") || line.contains("\"message\":\"frame.updated\"")
+                || line.contains("\"message\":\"frame.soft_deleted\"")));
+        assertThat(output.getOut()).doesNotContain("SW1A 1AA");
     }
 
     @Test
@@ -348,6 +366,10 @@ class FrameGrpcTests {
             SELECT count(*) FROM upgrade_test.frame_version
             WHERE frame_id = 'legacy' AND change_source IS NULL AND closed_by_change_source IS NULL
             """).query(Integer.class).single()).isEqualTo(1);
+    }
+
+    private double lifecycleCount(String operation) {
+        return meters.get("frame.lifecycle.changes").tag("operation", operation).counter().count();
     }
 
     private List<String> invalidFields(Executable call) throws InvalidProtocolBufferException {
