@@ -26,7 +26,7 @@ straight away.
 | --------------------- | --------------------------------------------------------------------------------- |
 | `src/backend/`        | Bare Spring Boot 3.5 + Java 21 module (Gradle). Exposes only `/api/health`.       |
 | `src/frontend/`       | Next.js + React 19 + TypeScript module that calls the backend `/api/health` on boot. |
-| `docker-compose.yml`  | One-command infra: backend, frontend, MongoDB, Postgres, OpenSearch + Dashboards.  |
+| `docker-compose.yml`  | One-command setup for the app, PostgreSQL, and monitoring.                         |
 | `data/`               | Extract from the legacy system — `inventory_frame.csv` (~1.3k OOH frame rows).    |
 | `design-system/`      | Design system the frontend must be built against — components, tokens, guidance.  |
 | `README.md`           | How to run the stack locally, ports, and credentials for the bundled services.    |
