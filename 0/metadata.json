@@ -1,0 +1,56 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8C74Y8G00PQYNPSB4D62P9K",
+  "session_id": "01a2186d-b355-76c0-9f8b-196a6c1614a4",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-26T15:21:26.612606Z",
+  "branch": "alex/glo-18-add-log-correlation-id",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "src/backend/src/main/java/com/global/ct/frameinventory/common/grpc/CorrelationIdInterceptor.java",
+    "src/backend/src/test/java/com/global/ct/frameinventory/frame/FrameGrpcTests.java",
+    "src/bff/codegen.yml",
+    "src/bff/src/frame-client.ts",
+    "src/bff/src/index.ts",
+    "src/bff/src/request-context.ts",
+    "src/bff/src/resolvers/frames.ts",
+    "src/bff/src/server.ts",
+    "src/bff/test/frames.test.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "f127dfb69055",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 238,
+    "cache_creation_tokens": 62387,
+    "cache_read_tokens": 2171341,
+    "output_tokens": 5736,
+    "api_call_count": 42
+  },
+  "session_token_usage": {
+    "input_tokens": 238,
+    "cache_creation_tokens": 62387,
+    "cache_read_tokens": 2171341,
+    "output_tokens": 5736,
+    "api_call_count": 42
+  },
+  "redaction": {
+    "replacements": 0,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 1
+  }
+}

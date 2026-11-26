@@ -1,0 +1,5 @@
+pick up this ticket https://linear.app/upfrontbeats/issue/GLO-18/add-log-correlation-id
+
+---
+
+update ticket description and open PR
