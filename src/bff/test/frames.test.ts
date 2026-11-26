@@ -487,7 +487,11 @@ test('frame reads and mutations forward the gRPC contract', async () => {
   )
   client.getFrameHistory.mockImplementation(
     (_request, _metadata, _options, callback) =>
-      callback(null, { versions: [frame] }),
+      callback(null, {
+        versions: [
+          { ...frame, importJobId: 'fdceefbf-7d49-4b54-a5a9-d432dfee8c36' },
+        ],
+      }),
   )
   client.createFrame.mockImplementation(
     (_request, _metadata, _options, callback) => callback(null, frame),
@@ -512,7 +516,7 @@ test('frame reads and mutations forward the gRPC contract', async () => {
           externalReferences { key value }
           linkedFrameIds
         }
-        frameHistory(frameId: "FRAME-001") { versionId }
+        frameHistory(frameId: "FRAME-001") { versionId importJobId }
       }`,
     })
     expect(reads.body).toMatchObject({
@@ -529,7 +533,12 @@ test('frame reads and mutations forward the gRPC contract', async () => {
             externalReferences: [{ key: 'broadsign', value: '123' }],
             linkedFrameIds: ['FRAME-002'],
           },
-          frameHistory: [{ versionId: frame.versionId }],
+          frameHistory: [
+            {
+              versionId: frame.versionId,
+              importJobId: 'fdceefbf-7d49-4b54-a5a9-d432dfee8c36',
+            },
+          ],
         },
       },
     })
