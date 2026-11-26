@@ -105,6 +105,29 @@ Once the stack is up, check the service entry points.
 Prometheus and Grafana listen on localhost. Their named volumes keep metrics
 and Grafana settings across restarts.
 
+### DELTA import dashboard
+
+For the host-based [local import setup](src/backend/README.md#local-import-operator),
+start Spring Boot with the dispatcher and worker enabled. Set
+`MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,prometheus` and keep HTTP
+port 8080 reachable from Docker. On Docker Desktop, scrape that host backend
+with the local import Compose override.
+
+```sh
+docker compose -f docker-compose.yml -f monitoring/compose.local-import.yml \
+  up -d --no-deps prometheus grafana
+```
+
+Open [Frame Inventory Imports](http://127.0.0.1:3001/d/frame-inventory-imports/frame-inventory-imports)
+to see the oldest pending and running jobs, terminal dispatch failures in the
+last hour, and mean and p95 apply duration. The age uses dispatch confirmation
+when available and job creation otherwise. Apply duration covers each activity
+attempt, including retries. Use the import job ID to find its
+`csv-import-<jobId>` workflow when investigating a specific job.
+
+To return to scraping the containerized backend and BFF, run
+`docker compose up -d prometheus grafana` with the standard Compose configuration.
+
 ### BFF metrics
 
 Run `docker compose up -d --build bff prometheus grafana`. If Prometheus was

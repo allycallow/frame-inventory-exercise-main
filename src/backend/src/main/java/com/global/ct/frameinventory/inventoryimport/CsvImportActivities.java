@@ -5,6 +5,7 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import io.micrometer.core.instrument.Timer;
 import io.temporal.activity.Activity;
 import io.temporal.failure.ApplicationFailure;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -17,12 +18,15 @@ public class CsvImportActivities implements CsvImportWorkflow.Activities {
     private final ImportDeltaApply delta;
     private final InventoryCsvReader reader;
     private final S3Client s3;
+    private final Timer applyDuration;
 
-    CsvImportActivities(ImportStaging staging, ImportDeltaApply delta, InventoryCsvReader reader, S3Client s3) {
+    CsvImportActivities(ImportStaging staging, ImportDeltaApply delta, InventoryCsvReader reader, S3Client s3,
+                        Timer applyDuration) {
         this.staging = staging;
         this.delta = delta;
         this.reader = reader;
         this.s3 = s3;
+        this.applyDuration = applyDuration;
     }
 
     @Override
@@ -66,7 +70,7 @@ public class CsvImportActivities implements CsvImportWorkflow.Activities {
 
     @Override
     public boolean apply(String jobId, String generation) {
-        return delta.apply(UUID.fromString(jobId), UUID.fromString(generation));
+        return applyDuration.record(() -> delta.apply(UUID.fromString(jobId), UUID.fromString(generation)));
     }
 
     @Override
