@@ -22,7 +22,7 @@ public class CorrelationIdInterceptor implements ServerInterceptor {
     private static final Metadata.Key<String> HEADER =
             Metadata.Key.of("x-correlation-id", Metadata.ASCII_STRING_MARSHALLER);
     private static final Pattern UUID_PATTERN =
-            Pattern.compile("[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}");
+Pattern.compile("[A-Fa-f0-9]{8}(-[A-Fa-f0-9]{4}){3}-[A-Fa-f0-9]{12}");
     private static final String LOG_FIELD = "correlationId";
 
     @Override
