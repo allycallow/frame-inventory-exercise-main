@@ -131,3 +131,21 @@ deployment environment. An unset or empty DSN leaves reporting disabled.
 Apollo reports unexpected execution errors, internal server errors, and
 upstream unavailability. Expected GraphQL validation and domain errors are
 excluded. The SDK strips request data and breadcrumbs from reported events.
+
+## Local inventory import
+
+The BFF build packages both the frame and inventory import protobufs. For local
+imports, run Spring Boot and the BFF on the same host. Enable Spring's
+`local-import` profile and configure its S3 upload settings as described in the
+[backend README](../backend/README.md). Set
+`IMPORT_GRPC_ENDPOINT=127.0.0.1:9090` on the BFF. This makes the BFF listen on
+IPv4 loopback and limits the import gRPC target to IPv4 loopback. With the
+variable unset, the import resolvers return `SERVICE_UNAVAILABLE` and frame
+operations remain available.
+
+Send the local operator token as `Authorization: Bearer <token>` with
+`createImportJob`, `importJob`, and `importRowErrors`. Only these resolvers
+forward the credential to Spring, which verifies the token and checks job
+ownership. Use the returned `uploadHeaders` values for the direct S3 PUT, then
+poll the job and request row errors by page. Keep the credential and signed
+URL out of application logs.

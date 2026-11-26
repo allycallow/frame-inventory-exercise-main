@@ -1,6 +1,7 @@
 import { GraphQLError } from 'graphql'
 import { GRAPHQL_ERROR_CODES } from '../consts'
-import { callFrameRpc, type FrameClient } from '../frame-client'
+import type { FrameClient } from '../frame-client'
+import { callGrpc } from '../grpc-client'
 import type { FrameData } from '../generated/frameinventory/v1/FrameData'
 import type { Timestamp__Output } from '../generated/google/protobuf/Timestamp'
 import type { FrameAttributesInput, Resolvers } from '../generated/graphql'
@@ -83,7 +84,7 @@ export function createFrameResolvers(client: FrameClient) {
           throw badInput('Size must be between 1 and 50.')
         }
 
-        return callFrameRpc(
+        return callGrpc(
           'ListFrames',
           client.listFrames.bind(client),
           { page, size },
@@ -93,7 +94,7 @@ export function createFrameResolvers(client: FrameClient) {
       },
       frame(_parent, { frameId }, { correlationId }) {
         validateFrameId(frameId)
-        return callFrameRpc(
+        return callGrpc(
           'GetFrame',
           client.getFrame.bind(client),
           { frameId },
@@ -103,7 +104,7 @@ export function createFrameResolvers(client: FrameClient) {
       },
       async frameHistory(_parent, { frameId }, { correlationId }) {
         validateFrameId(frameId)
-        const history = await callFrameRpc(
+        const history = await callGrpc(
           'GetFrameHistory',
           client.getFrameHistory.bind(client),
           { frameId },
@@ -119,7 +120,7 @@ export function createFrameResolvers(client: FrameClient) {
         if (frameId.length > 128) {
           throw badInput('Frame ID must be 128 characters or fewer.')
         }
-        return callFrameRpc(
+        return callGrpc(
           'CreateFrame',
           client.createFrame.bind(client),
           {
@@ -136,7 +137,7 @@ export function createFrameResolvers(client: FrameClient) {
       ) {
         validateFrameId(frameId)
         validateVersionId(expectedVersionId)
-        return callFrameRpc(
+        return callGrpc(
           'UpdateFrame',
           client.updateFrame.bind(client),
           {
@@ -156,7 +157,7 @@ export function createFrameResolvers(client: FrameClient) {
         if (expectedVersionId != null) {
           validateVersionId(expectedVersionId)
         }
-        await callFrameRpc(
+        await callGrpc(
           'DeleteFrame',
           client.deleteFrame.bind(client),
           {

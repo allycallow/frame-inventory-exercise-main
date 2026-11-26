@@ -1,0 +1,55 @@
+enum ImportMode {
+  DELTA
+  FULL_SNAPSHOT
+}
+
+enum ImportJobStatus {
+  AWAITING_UPLOAD
+  PENDING
+  RUNNING
+  COMPLETED
+  COMPLETED_WITH_ERRORS
+  FAILED
+  EXPIRED
+}
+
+type ImportJob {
+  jobId: ID!
+  mode: ImportMode!
+  status: ImportJobStatus!
+  forceOverwrite: Boolean!
+  createdAt: String!
+  uploadExpiresAt: String!
+  finishedAt: String
+  rowsRead: Int!
+  rowsApplied: Int!
+  rowsUnchanged: Int!
+  rowsRejected: Int!
+  framesRetired: Int!
+  failureCode: String
+}
+
+type ImportUploadHeader {
+  name: String!
+  value: String!
+}
+
+type CreateImportJobResult {
+  job: ImportJob!
+  uploadUrl: String!
+  uploadHeaders: [ImportUploadHeader!]!
+}
+
+type ImportRowError {
+  rowNumber: Int!
+  code: String!
+  frameId: ID
+  detail: String!
+}
+
+type ImportRowErrorPage {
+  items: [ImportRowError!]!
+  page: Int!
+  size: Int!
+  hasNext: Boolean!
+}

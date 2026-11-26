@@ -70,7 +70,8 @@ profile only for host-local development and set `INVENTORY_IMPORT_LOCAL_TOKEN`
 to a randomly generated 64-character lowercase hex value. Keep the credential
 out of source control and logs. The RPC accepts the credential as
 `authorization: Bearer <token>` only from a loopback peer and sets the fixed
-`local-import-operator` identity. The profile binds gRPC to IPv4 loopback.
+`local-import-operator` identity. The interceptor checks the actual transport
+peer. The Spring gRPC server can still listen on all interfaces.
 
 The import BFF must run on the same host, accept the credential only for import
 operations, and forward it alongside the existing correlation metadata. Do not
