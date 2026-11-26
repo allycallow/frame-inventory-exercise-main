@@ -1,3 +1,4 @@
+import './sentry'
 import { startStandaloneServer } from '@apollo/server/standalone'
 import { credentials, loadPackageDefinition } from '@grpc/grpc-js'
 import { loadSync } from '@grpc/proto-loader'

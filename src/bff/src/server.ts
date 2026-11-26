@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import type { FrameClient } from './frame-client'
 import { logger } from './logger'
 import { createFrameResolvers } from './resolvers/frames'
+import { sentryPlugin } from './sentry'
 
 export function createServer(client: FrameClient) {
   const typeDefs = loadFilesSync<DocumentNode>(join(__dirname, '../schema'), {
@@ -15,6 +16,7 @@ export function createServer(client: FrameClient) {
     typeDefs,
     logger,
     plugins: [
+      sentryPlugin,
       {
         async serverWillStart() {
           return {

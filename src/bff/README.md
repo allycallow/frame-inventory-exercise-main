@@ -121,3 +121,13 @@ Compose setup.
 Run `npm run lint` and `npm run format:check` to check the BFF. Run
 `npm run format` to apply Prettier. Run `npm test` to generate types, type-check
 the test, and run it through ts-jest with a stub gRPC client.
+
+## Sentry error reporting
+
+Set `SENTRY_DSN` to the BFF Sentry project's DSN before starting the service.
+For Compose, set `BFF_SENTRY_DSN` instead. Set `SENTRY_ENVIRONMENT` to label events by
+deployment environment. An unset or empty DSN leaves reporting disabled.
+
+Apollo reports unexpected execution errors, internal server errors, and
+upstream unavailability. Expected GraphQL validation and domain errors are
+excluded. The SDK strips request data and breadcrumbs from reported events.
