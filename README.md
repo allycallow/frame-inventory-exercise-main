@@ -4,7 +4,7 @@ Monorepo scaffold for the frame-inventory take-home exercise.
 
 ## System Overview
 
-The Next.js page calls the Spring Boot health endpoint through a same-origin rewrite. Docker Compose runs both modules alongside PostgreSQL, OpenSearch, OpenSearch Dashboards, Prometheus, and Grafana. The exercise provides a legacy export in `data/inventory_frame.csv` and describes the inventory features in `INSTRUCTIONS.md`.
+The Next.js page calls the Spring Boot health endpoint through a same-origin rewrite. Docker Compose runs both modules alongside PostgreSQL, OpenSearch, OpenSearch Dashboards, Prometheus, Grafana, and the OpenTelemetry Collector. The exercise provides a legacy export in `data/inventory_frame.csv` and describes the inventory features in `INSTRUCTIONS.md`.
 
 Bring the whole stack up with one command.
 
@@ -40,6 +40,7 @@ If you have `just` installed, run `just` to list the available recipes.
 | opensearch            | 9200, 9600 | 9200, 9600    | Single-node, security plugin disabled for local use    |
 | opensearch-dashboards | 5601      | 5601           | UI for the OpenSearch cluster above                    |
 | prometheus            | 9091      | 9090           | Scrapes Spring Boot metrics every 15 seconds           |
+| otel-collector        | 9464      | 9464           | Scrapes Spring Boot metrics for local inspection       |
 | grafana               | 3001      | 3000           | Queries the provisioned Prometheus data source        |
 
 ### Credentials
@@ -93,9 +94,24 @@ Once the stack is up, check both entry points.
 - Open [Grafana](http://127.0.0.1:3001), sign in with the initial credentials
   above, and run `up{job="frame-inventory-backend"}` in **Explore** using the
   default Prometheus data source. A value of `1` confirms the backend is being scraped.
+- Open [Frame Inventory Backend](http://127.0.0.1:3001/d/frame-inventory-backend/frame-inventory-backend)
+  for HTTP and gRPC request rate, errors, p50, p95, and p99 latency, and resource saturation.
+  Generate API traffic and allow at least two Prometheus scrapes for request graphs
+  to populate.
 
 Prometheus and Grafana listen on localhost. Their named volumes keep metrics
 and Grafana settings across restarts.
+
+### OpenTelemetry Collector
+
+Run `docker compose up -d --build otel-collector` to start the Collector and its
+dependencies. The Collector scrapes `http://backend:8080/actuator/prometheus`
+every 15 seconds and exposes the latest samples on localhost. Once the backend
+is ready and the first scrape completes, check for a JVM metric from Spring Boot.
+
+```bash
+curl --fail --silent --show-error http://127.0.0.1:9464/metrics | rg '^jvm_memory_used_bytes\{'
+```
 
 ## Running modules without Docker
 
