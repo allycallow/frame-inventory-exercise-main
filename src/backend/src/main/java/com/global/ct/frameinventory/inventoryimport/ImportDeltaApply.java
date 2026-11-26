@@ -67,7 +67,7 @@ class ImportDeltaApply {
     public void fail(UUID job, String code) {
         int updated = jdbc.sql("""
                 UPDATE import_jobs SET status = 'FAILED', finished_at = clock_timestamp(), failure_code = :code
-                WHERE job_id = :job AND status = 'RUNNING'
+                WHERE job_id = :job AND status IN ('PENDING', 'RUNNING')
                 """).param("job", job).param("code", code).update();
         if (updated == 1) {
             staging.clear(job);
