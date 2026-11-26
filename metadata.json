@@ -1,0 +1,48 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8CM1WRCTFYT9ZXTG1KZX2RZ",
+  "strategy": "manual-commit",
+  "branch": "alex/glo-36-add-import-dashboard",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "README.md",
+    "monitoring/compose.local-import.yml",
+    "monitoring/dashboards/frame-inventory-imports.json",
+    "monitoring/prometheus-local-import.yml",
+    "src/backend/src/main/java/com/global/ct/frameinventory/inventoryimport/CsvImportActivities.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/inventoryimport/CsvImportWorkerConfiguration.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/inventoryimport/ImportJobRepository.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/inventoryimport/ImportMetrics.java",
+    "src/backend/src/main/resources/db/migration/V6__index_inventory_import_monitoring.sql"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 390,
+    "cache_creation_tokens": 74409,
+    "cache_read_tokens": 21513115,
+    "output_tokens": 32475,
+    "api_call_count": 130
+  },
+  "redaction": {
+    "replacements": 63,
+    "layers": {
+      "betterleaks": 4,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 47,
+      "credentialed_uri": 0,
+      "entropy": 12,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  }
+}
