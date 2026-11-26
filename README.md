@@ -12,6 +12,17 @@ Bring the whole stack up with one command.
 docker compose up --build
 ```
 
+Once PostgreSQL is healthy, the backend applies pending Flyway migrations during startup.
+
+If you have `just` installed, run `just` to list the available recipes.
+
+| Command | Purpose |
+|---------|---------|
+| `just up` | Build and start the whole stack in the foreground. |
+| `just down` | Stop the stack and retain its named data volumes. |
+| `just compose logs -f backend` | Pass arguments through to Docker Compose. |
+| `just migrate` | Run Flyway on its own in a one-off backend container. |
+
 ## Subdirectories & System Boundaries
 
 - [Application source](./src/README.md) contains the Java 21 and Spring Boot 3.5 backend and the Next.js, React 19, and TypeScript frontend.
