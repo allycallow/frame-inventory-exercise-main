@@ -1,0 +1,9 @@
+nice can you setup https://pre-commit.com/
+
+---
+
+can you add https://commitlint.js.org/guides/local-setup.html to pre-commit and add section in root AGENTS.md
+
+---
+
+nice lets open PR
