@@ -172,13 +172,14 @@ export async function callFrameRpc<Request, Response>(
     )
     return response
   } catch (error) {
+    const durationMs = performance.now() - startedAt
     const grpcError = isGrpcError(error) ? error : undefined
 
     if (grpcError) {
       const code = clientErrorCodes.get(grpcError.code)
       if (code) {
         rpcLogger.debug(
-          { method, grpcCode: grpcError.code },
+          { method, grpcCode: grpcError.code, durationMs },
           'Frame RPC rejected',
         )
         const violations =
@@ -198,7 +199,7 @@ export async function callFrameRpc<Request, Response>(
         grpcError.code === status.DEADLINE_EXCEEDED
       ) {
         rpcLogger.warn(
-          { method, grpcCode: grpcError.code },
+          { method, grpcCode: grpcError.code, durationMs },
           'Frame service is unavailable',
         )
         throw new GraphQLError('Frame service is unavailable', {
@@ -207,7 +208,10 @@ export async function callFrameRpc<Request, Response>(
       }
     }
 
-    rpcLogger.error({ method, grpcCode: grpcError?.code }, 'Frame RPC failed')
+    rpcLogger.error(
+      { method, grpcCode: grpcError?.code, durationMs },
+      'Frame RPC failed',
+    )
     throw new GraphQLError('Frame operation failed', {
       extensions: { code: GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR },
     })

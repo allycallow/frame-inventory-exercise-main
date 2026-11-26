@@ -172,6 +172,29 @@ class FrameGrpcTests {
 
     @Test
     @ExtendWith(OutputCaptureExtension.class)
+    void logsUnexpectedRpcFailureWithCorrelationIdAndCause(CapturedOutput output) {
+        var correlationId = "069aa868-7443-4787-8b47-e56fbc6077dd";
+        var headers = new Metadata();
+        headers.put(Metadata.Key.of("x-correlation-id", Metadata.ASCII_STRING_MARSHALLER), correlationId);
+        var correlatedClient = client.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers));
+
+        jdbc.sql("ALTER TABLE frame_version RENAME TO unavailable_frame_version").update();
+        try {
+            var failure = assertThrows(StatusRuntimeException.class,
+                () -> correlatedClient.listFrames(ListFramesRequest.getDefaultInstance()));
+            assertThat(failure.getStatus().getCode()).isEqualTo(Status.Code.UNKNOWN);
+        } finally {
+            jdbc.sql("ALTER TABLE unavailable_frame_version RENAME TO frame_version").update();
+        }
+
+        assertThat(output.getOut().lines().toList()).anySatisfy(line -> assertThat(line).contains(
+            "\"message\":\"grpc.server_error\"", "\"level\":\"ERROR\"", "\"grpcStatus\":\"UNKNOWN\"",
+            "ListFrames", "\"correlationId\":\"" + correlationId + "\"", "PSQLException"
+        ));
+    }
+
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
     void recordsCommittedLifecycleEventsAndLogsTheFullCurrentCount(CapturedOutput output) {
         double createdBefore = lifecycleCount("created");
         double updatedBefore = lifecycleCount("updated");
