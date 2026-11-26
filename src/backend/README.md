@@ -8,7 +8,7 @@ The backend is a Java 21 Spring Boot application. It uses Spring MVC, Actuator, 
 
 - [Source tree](./src/README.md) contains the application and its runtime configuration.
 - [Inventory migration](./src/main/resources/db/migration/V1__create_frame_inventory.sql) creates the frame, version history, and related tables.
-- [Schema brief](../../concepts_brief.md) maps the CSV fields and describes the shared Spring write transaction.
+- [Frame inventory schema](../../docs/frame-inventory-schema/frame-inventory-schema.md) maps the CSV fields and describes the shared Spring write transaction.
 
 ## Local development
 
