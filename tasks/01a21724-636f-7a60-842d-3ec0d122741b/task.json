@@ -1,0 +1,17 @@
+{
+  "tool_use_id": "01a21724-636f-7a60-842d-3ec0d122741b",
+  "agent_id": "01a21724-636f-7a60-842d-3ec0d122741b",
+  "subagent_type": "default",
+  "files": [
+    "design-system/README.md"
+  ],
+  "token_usage": {
+    "input_tokens": 84658,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 896429,
+    "output_tokens": 6173,
+    "api_call_count": 17
+  },
+  "started_at": "2026-11-26T09:16:31.664124Z",
+  "completed_at": "2026-11-26T09:19:19.095319Z"
+}

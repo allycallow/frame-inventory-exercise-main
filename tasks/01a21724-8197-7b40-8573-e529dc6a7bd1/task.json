@@ -1,0 +1,19 @@
+{
+  "tool_use_id": "01a21724-8197-7b40-8573-e529dc6a7bd1",
+  "agent_id": "01a21724-8197-7b40-8573-e529dc6a7bd1",
+  "subagent_type": "default",
+  "files": [
+    "src/frontend/README.md",
+    "src/frontend/src/README.md",
+    "src/frontend/src/app/README.md"
+  ],
+  "token_usage": {
+    "input_tokens": 20728,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 456604,
+    "output_tokens": 3352,
+    "api_call_count": 13
+  },
+  "started_at": "2026-11-26T09:16:38.998539Z",
+  "completed_at": "2026-11-26T09:19:19.095408Z"
+}

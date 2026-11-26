@@ -1,0 +1,56 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8BMF2MF3CJWYXPNKYG53PFF",
+  "strategy": "manual-commit",
+  "branch": "feat/frame-inventory-schema",
+  "checkpoints_count": 8,
+  "files_touched": [
+    "README.md",
+    "concepts_brief.md",
+    "docker-compose.yml",
+    "src/backend/README.md",
+    "src/backend/build.gradle",
+    "src/backend/src/main/README.md",
+    "src/backend/src/main/resources/application.yml",
+    "src/backend/src/main/resources/db/migration/V1__create_frame_inventory.sql",
+    "src/backend/src/test/java/com/global/ct/frameinventory/ApplicationTests.java"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 17579,
+    "cache_creation_tokens": 156392,
+    "cache_read_tokens": 8453593,
+    "output_tokens": 26765,
+    "api_call_count": 87,
+    "subagent_tokens": {
+      "input_tokens": 221447,
+      "cache_creation_tokens": 0,
+      "cache_read_tokens": 3217781,
+      "output_tokens": 25231,
+      "api_call_count": 76
+    },
+    "subagent_tokens_complete": true
+  },
+  "redaction": {
+    "replacements": 14,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 3,
+      "credentialed_uri": 0,
+      "entropy": 11,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  }
+}
