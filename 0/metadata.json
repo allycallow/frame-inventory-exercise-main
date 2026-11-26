@@ -1,0 +1,53 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8BYKMW4K846KAXE85VTGD4N",
+  "session_id": "01a217dc-71e3-7a03-9829-ad0c5702ad11",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-26T12:52:11.560921Z",
+  "branch": "alex/glo-14-add-opentelemetry-with-spring-boot",
+  "checkpoints_count": 6,
+  "save_step_count": 4,
+  "files_touched": [
+    "README.md",
+    "docker-compose.yml",
+    "monitoring/dashboards/frame-inventory-backend.json",
+    "monitoring/grafana-dashboard-provider.yml",
+    "monitoring/otel-collector.yml",
+    "src/backend/src/main/resources/application.yml"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "7c52a6ac9c96",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 454,
+    "cache_creation_tokens": 100269,
+    "cache_read_tokens": 8372218,
+    "output_tokens": 17398,
+    "api_call_count": 114
+  },
+  "session_token_usage": {
+    "input_tokens": 454,
+    "cache_creation_tokens": 100269,
+    "cache_read_tokens": 8372218,
+    "output_tokens": 17398,
+    "api_call_count": 114
+  },
+  "redaction": {
+    "replacements": 1,
+    "layers": {
+      "betterleaks": 1,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 6
+  }
+}

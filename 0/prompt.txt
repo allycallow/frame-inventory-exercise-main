@@ -1,0 +1,25 @@
+lets chat about this ticket https://linear.app/upfrontbeats/issue/GLO-14/add-opentelemetry-with-spring-boot can we update the description
+
+---
+
+this ticket should just be setting up the scraping of the metrics
+
+---
+
+nice lets implement and update ticket progress
+
+---
+
+whats the endpoint so I can see the metrics
+
+---
+
+can you create me a backend grafana dashboard with gold and red metrics
+
+---
+
+include p99
+
+---
+
+nice lets open PR
