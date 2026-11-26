@@ -1,0 +1,21 @@
+pick this ticket up and update the description https://linear.app/upfrontbeats/issue/GLO-7/setup-sentry-for-sprint-boot
+
+---
+
+can you open PR when ready
+
+---
+
+merged
+
+---
+
+can you add a new QA column in linear and move ticket to there.
+
+---
+
+nice just moved to QA
+
+---
+
+can you pick this ticket up https://linear.app/upfrontbeats/issue/GLO-8/add-prometheus-and-grafana-to-docker-compose

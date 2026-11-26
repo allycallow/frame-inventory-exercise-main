@@ -3,7 +3,7 @@
   "checkpoint_id": "01M8BWHN2BF9BM79YFGBKYEDA2",
   "strategy": "manual-commit",
   "branch": "alex/glo-2-frame-management-grpc",
-  "checkpoints_count": 5,
+  "checkpoints_count": 10,
   "files_touched": [
     "concepts_brief.md",
     "docker-compose.yml",
@@ -32,24 +32,31 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 9,
-    "cache_creation_tokens": 2437,
-    "cache_read_tokens": 621702,
-    "output_tokens": 962,
-    "api_call_count": 3
+    "input_tokens": 334,
+    "cache_creation_tokens": 121337,
+    "cache_read_tokens": 6069044,
+    "output_tokens": 18616,
+    "api_call_count": 74
   },
   "redaction": {
-    "replacements": 15,
+    "replacements": 24,
     "layers": {
-      "betterleaks": 3,
+      "betterleaks": 7,
       "connection_string": 0,
       "credential_key": 0,
       "credential_value": 3,
       "credentialed_uri": 0,
-      "entropy": 9,
+      "entropy": 14,
       "key_context": 0,
       "provider_token": 0,
       "shell_stdin": 0

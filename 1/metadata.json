@@ -1,0 +1,59 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8BWHN2BF9BM79YFGBKYEDA2",
+  "session_id": "01a217a5-0e21-7ec2-906c-ee1a9bcacb06",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-26T12:16:09.844196Z",
+  "branch": "alex/glo-2-frame-management-grpc",
+  "checkpoints_count": 5,
+  "save_step_count": 5,
+  "files_touched": [
+    "concepts_brief.md",
+    "docker-compose.yml",
+    "src/backend/Dockerfile",
+    "src/backend/README.md",
+    "src/backend/build.gradle",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameProblem.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameRepository.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameService.java",
+    "src/backend/src/main/proto/frameinventory/v1/frames.proto",
+    "src/backend/src/main/resources/application.yml",
+    "src/backend/src/test/java/com/global/ct/frameinventory/ApplicationTests.java",
+    "src/backend/src/test/java/com/global/ct/frameinventory/frame/FrameServiceTests.java"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "41c694e3e151",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 325,
+    "cache_creation_tokens": 118900,
+    "cache_read_tokens": 5447342,
+    "output_tokens": 17654,
+    "api_call_count": 71
+  },
+  "session_token_usage": {
+    "input_tokens": 325,
+    "cache_creation_tokens": 118900,
+    "cache_read_tokens": 5447342,
+    "output_tokens": 17654,
+    "api_call_count": 71
+  },
+  "redaction": {
+    "replacements": 9,
+    "layers": {
+      "betterleaks": 4,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 5,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 5
+  }
+}
