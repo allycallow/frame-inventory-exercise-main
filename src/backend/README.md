@@ -23,3 +23,22 @@ and `SPRING_DATASOURCE_PASSWORD` when connecting to a different database.
 From `src/backend`, run `./gradlew test` for the database-free Spring context
 check. To verify the migration, start the backend with PostgreSQL and check
 `flyway_schema_history` for a successful version `1` entry.
+
+## Sentry error reporting
+
+Set `SENTRY_DSN` to the DSN of the backend's Sentry project and set
+`SENTRY_ENVIRONMENT` to the environment name, such as `staging`. The environment
+defaults to `local`. An empty or unset DSN disables error reporting.
+
+Export the variables before running `./gradlew bootRun` from `src/backend`.
+For Docker Compose, export the same variables or set them in an untracked
+`.env` file at the repository root, then run `docker compose up --build -d backend`
+to rebuild and apply the settings.
+
+To verify reporting, use a non-production Sentry project or environment. In a
+local checkout, temporarily make a controller handler throw an
+`IllegalStateException` with a unique test message and call that route. Confirm
+the event appears in Sentry with the expected stack trace and environment tag,
+then link the event on the issue. Remove the temporary exception and confirm
+`curl --fail http://localhost:8080/api/health` succeeds with the DSN configured
+and again after restarting the backend with the DSN unset.
