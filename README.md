@@ -4,7 +4,7 @@ Monorepo scaffold for the frame-inventory take-home exercise.
 
 ## System Overview
 
-The Next.js page calls the Spring Boot health endpoint through a same-origin rewrite. Docker Compose runs both modules alongside PostgreSQL, OpenSearch, and OpenSearch Dashboards. The exercise provides a legacy export in `data/inventory_frame.csv` and describes the inventory features in `INSTRUCTIONS.md`.
+The Next.js page calls the Spring Boot health endpoint through a same-origin rewrite. Docker Compose runs both modules alongside PostgreSQL, OpenSearch, OpenSearch Dashboards, Prometheus, and Grafana. The exercise provides a legacy export in `data/inventory_frame.csv` and describes the inventory features in `INSTRUCTIONS.md`.
 
 Bring the whole stack up with one command.
 
@@ -39,6 +39,8 @@ If you have `just` installed, run `just` to list the available recipes.
 | postgres              | 5432      | 5432           | Spring Boot applies the inventory schema via Flyway    |
 | opensearch            | 9200, 9600 | 9200, 9600    | Single-node, security plugin disabled for local use    |
 | opensearch-dashboards | 5601      | 5601           | UI for the OpenSearch cluster above                    |
+| prometheus            | 9091      | 9090           | Scrapes Spring Boot metrics every 15 seconds           |
+| grafana               | 3001      | 3000           | Queries the provisioned Prometheus data source        |
 
 ### Credentials
 
@@ -46,6 +48,7 @@ If you have `just` installed, run `just` to list the available recipes.
 |-----------------------|------------|----------------|------------------|
 | postgres              | `app`      | `app`          | `frames`         |
 | opensearch            | n/a        | n/a            | n/a              |
+| grafana               | `admin`    | `admin`         | n/a              |
 
 ## Global Invariants
 
@@ -81,6 +84,18 @@ Once the stack is up, check both entry points.
 
 - Open <http://localhost:3000> &mdash; the page calls `/api/health` and prints the JSON response.
 - Hit the backend directly: <http://localhost:8080/api/health>.
+
+### Backend metrics
+
+- Open [Prometheus Targets](http://127.0.0.1:9091/targets) and wait for the
+  `frame-inventory-backend` target to show **UP**. It scrapes
+  `http://backend:8080/actuator/prometheus` on the Compose network.
+- Open [Grafana](http://127.0.0.1:3001), sign in with the initial credentials
+  above, and run `up{job="frame-inventory-backend"}` in **Explore** using the
+  default Prometheus data source. A value of `1` confirms the backend is being scraped.
+
+Prometheus and Grafana listen on localhost. Their named volumes keep metrics
+and Grafana settings across restarts.
 
 ## Running modules without Docker
 
