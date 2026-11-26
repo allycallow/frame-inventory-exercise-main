@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package frameinventory.v1;
+
+option java_package = "com.global.ct.frameinventory.grpc.v1";
+option java_multiple_files = true;
+option java_outer_classname = "InventoryImportProto";
+
+import "google/protobuf/timestamp.proto";
+
+service InventoryImport {
+  rpc CreateImportJob(CreateImportJobRequest) returns (CreateImportJobResponse);
+  rpc GetImportJob(GetImportJobRequest) returns (ImportJob);
+  rpc ListImportRowErrors(ListImportRowErrorsRequest) returns (ListImportRowErrorsResponse);
+}
+
+enum ImportMode {
+  IMPORT_MODE_UNSPECIFIED = 0;
+  DELTA = 1;
+  FULL_SNAPSHOT = 2;
+}
+
+enum ImportJobStatus {
+  IMPORT_JOB_STATUS_UNSPECIFIED = 0;
+  AWAITING_UPLOAD = 1;
+  PENDING = 2;
+  RUNNING = 3;
+  COMPLETED = 4;
+  COMPLETED_WITH_ERRORS = 5;
+  FAILED = 6;
+  EXPIRED = 7;
+}
+
+message CreateImportJobRequest {
+  // Defaults to DELTA. FULL_SNAPSHOT is reserved until snapshot validation ships.
+  ImportMode mode = 1;
+  bool force_overwrite = 2;
+}
+
+message CreateImportJobResponse {
+  ImportJob job = 1;
+  string upload_url = 2;
+  // Send these headers with the PUT. The browser supplies Host.
+  map<string, string> upload_headers = 3;
+}
+
+message GetImportJobRequest {
+  string job_id = 1;
+}
+
+message ImportJob {
+  string job_id = 1;
+  ImportMode mode = 2;
+  ImportJobStatus status = 3;
+  bool force_overwrite = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp upload_expires_at = 6;
+  google.protobuf.Timestamp finished_at = 7;
+  int32 rows_read = 8;
+  int32 rows_applied = 9;
+  int32 rows_unchanged = 10;
+  int32 rows_rejected = 11;
+  int32 frames_retired = 12;
+  optional string failure_code = 13;
+}
+
+message ListImportRowErrorsRequest {
+  string job_id = 1;
+  int32 page = 2;
+  // Defaults to 25. Valid values are 1 through 50.
+  optional int32 size = 3;
+}
+
+message ImportRowError {
+  // One-based data record number, excluding the header.
+  int32 row_number = 1;
+  string code = 2;
+  optional string frame_id = 3;
+  string detail = 4;
+}
+
+message ListImportRowErrorsResponse {
+  repeated ImportRowError items = 1;
+  int32 page = 2;
+  int32 size = 3;
+  bool has_next = 4;
+}
