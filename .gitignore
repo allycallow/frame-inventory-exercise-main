@@ -28,3 +28,6 @@ frontend/*.local
 # Env
 .env
 .env.local
+
+
+*_DRIFT_REPORT.md
