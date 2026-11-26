@@ -4,6 +4,7 @@ import type { DocumentNode } from 'graphql'
 import { join } from 'node:path'
 import type { FrameClient } from './frame-client'
 import { logger } from './logger'
+import type { RequestContext } from './request-context'
 import { createFrameResolvers } from './resolvers/frames'
 import { sentryPlugin } from './sentry'
 
@@ -12,7 +13,7 @@ export function createServer(client: FrameClient) {
     extensions: ['gql'],
   })
 
-  return new ApolloServer({
+  return new ApolloServer<RequestContext>({
     typeDefs,
     logger,
     plugins: [

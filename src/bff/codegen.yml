@@ -5,6 +5,7 @@ generates:
       - typescript
       - typescript-resolvers
     config:
+      contextType: ../request-context#RequestContext
       useTypeImports: true
       mappers:
         Frame: ./frameinventory/v1/Frame#Frame__Output

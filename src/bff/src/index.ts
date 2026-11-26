@@ -4,6 +4,7 @@ import { credentials, loadPackageDefinition } from '@grpc/grpc-js'
 import { loadSync } from '@grpc/proto-loader'
 import { PrometheusExporter } from '@opentelemetry/exporter-prometheus'
 import { MeterProvider } from '@opentelemetry/sdk-metrics'
+import { randomUUID } from 'node:crypto'
 import { resolve } from 'node:path'
 import type { ProtoGrpcType } from './generated/frames'
 import { logger } from './logger'
@@ -46,6 +47,7 @@ async function main() {
       },
     })
     const { url } = await startStandaloneServer(server, {
+      context: async () => ({ correlationId: randomUUID() }),
       listen: { port: 4000 },
     })
     logger.info({ url }, 'Frame Inventory GraphQL API available')
