@@ -1,9 +1,12 @@
 import { startStandaloneServer } from '@apollo/server/standalone'
 import { credentials, loadPackageDefinition } from '@grpc/grpc-js'
 import { loadSync } from '@grpc/proto-loader'
+import { PrometheusExporter } from '@opentelemetry/exporter-prometheus'
+import { MeterProvider } from '@opentelemetry/sdk-metrics'
 import { resolve } from 'node:path'
 import type { ProtoGrpcType } from './generated/frames'
 import { logger } from './logger'
+import { createMetricsPlugin } from './metrics'
 import { createServer } from './server'
 
 async function main() {
@@ -19,14 +22,35 @@ async function main() {
     credentials.createInsecure(),
   )
 
+  const exporter = new PrometheusExporter({
+    host: process.env.OTEL_EXPORTER_PROMETHEUS_HOST ?? '127.0.0.1',
+    port: 9465,
+    preventServerStart: true,
+  })
+  const meterProvider = new MeterProvider({ readers: [exporter] })
+
   try {
     const server = createServer(client)
+    server.addPlugin(
+      createMetricsPlugin(meterProvider.getMeter('frame-inventory-bff')),
+    )
+    server.addPlugin({
+      async serverWillStart() {
+        await exporter.startServer()
+        return {
+          async serverWillStop() {
+            await meterProvider.shutdown()
+          },
+        }
+      },
+    })
     const { url } = await startStandaloneServer(server, {
       listen: { port: 4000 },
     })
     logger.info({ url }, 'Frame Inventory GraphQL API available')
   } catch (error) {
     client.close()
+    await meterProvider.shutdown()
     throw error
   }
 }

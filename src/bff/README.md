@@ -109,6 +109,15 @@ The resolver implementations live in [`src/resolvers/`](./src/resolvers/).
 The build runs GraphQL Codegen to generate TypeScript resolver types from the
 same files. Run `npm run codegen` to regenerate the resolver types on their own.
 
+For a local run, Apollo's OpenTelemetry metrics are available at
+`http://127.0.0.1:9465/metrics`. They cover requests that enter Apollo's GraphQL
+pipeline. Parse, validation, and resolver errors count as failed requests.
+Request metrics use operation type and outcome. A separate histogram measures
+top-level resolver time, including upstream gRPC calls, by operation type and
+schema field name. Client-chosen operation names and aliases are excluded from
+the labels. See the [BFF metrics dashboard](../../README.md#bff-metrics) for the
+Compose setup.
+
 Run `npm run lint` and `npm run format:check` to check the BFF. Run
 `npm run format` to apply Prettier. Run `npm test` to generate types, type-check
 the test, and run it through ts-jest with a stub gRPC client.

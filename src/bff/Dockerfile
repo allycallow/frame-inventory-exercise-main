@@ -14,5 +14,5 @@ COPY --from=build /app/bff/node_modules ./node_modules
 COPY --from=build /app/bff/dist ./dist
 COPY --from=build /app/bff/schema ./schema
 USER node
-EXPOSE 4000
+EXPOSE 4000 9465
 CMD ["node", "dist/index.js"]

@@ -40,7 +40,7 @@ If you have `just` installed, run `just` to list the available recipes.
 | postgres              | 5432      | 5432           | Spring Boot applies the inventory schema via Flyway    |
 | opensearch            | 9200, 9600 | 9200, 9600    | Single-node, security plugin disabled for local use    |
 | opensearch-dashboards | 5601      | 5601           | UI for the OpenSearch cluster above                    |
-| prometheus            | 9091      | 9090           | Scrapes Spring Boot metrics every 15 seconds           |
+| prometheus            | 9091      | 9090           | Scrapes Spring Boot and Apollo metrics every 15 seconds |
 | otel-collector        | 9464      | 9464           | Scrapes Spring Boot metrics for local inspection       |
 | grafana               | 3001      | 3000           | Queries the provisioned Prometheus data source        |
 
@@ -107,6 +107,23 @@ Once the stack is up, check the service entry points.
 
 Prometheus and Grafana listen on localhost. Their named volumes keep metrics
 and Grafana settings across restarts.
+
+### BFF metrics
+
+Run `docker compose up -d --build bff prometheus grafana`. If Prometheus was
+already running, reload its scrape configuration with
+`docker compose restart prometheus`. Confirm that `frame-inventory-bff` is
+**UP** in [Prometheus Targets](http://127.0.0.1:9091/targets). Prometheus scrapes
+`http://bff:9465/metrics` on the Compose network.
+
+Open [Frame Inventory BFF](http://127.0.0.1:3001/d/frame-inventory-bff/frame-inventory-bff)
+for GraphQL request rate, error percentage, p50/p95/p99 latency, in-flight
+requests, and event loop utilization. The **Slowest queries and mutations (p95)**
+panel ranks top-level fields such as `frames` and `updateFrame` by resolver
+latency over the selected time range. Run the [frame list query](./src/bff/README.md)
+several times across at least two scrapes. Run `{ frames(page: -1) { page } }`
+to generate a GraphQL error. The dashboard counts GraphQL errors even when
+Apollo responds with HTTP 200.
 
 ### OpenTelemetry Collector
 

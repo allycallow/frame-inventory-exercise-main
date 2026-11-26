@@ -1,9 +1,15 @@
 import { Metadata, status } from '@grpc/grpc-js'
 import { expect, jest, test } from '@jest/globals'
+import {
+  PrometheusExporter,
+  PrometheusSerializer,
+} from '@opentelemetry/exporter-prometheus'
+import { MeterProvider } from '@opentelemetry/sdk-metrics'
 import { Type } from 'protobufjs'
 import type { FrameClient } from '../src/frame-client'
 import type { Frame__Output } from '../src/generated/frameinventory/v1/Frame'
 import type { ListFramesResponse__Output } from '../src/generated/frameinventory/v1/ListFramesResponse'
+import { createMetricsPlugin } from '../src/metrics'
 import { createServer } from '../src/server'
 
 function mockClient() {
@@ -163,6 +169,95 @@ test.each([
     })
   } finally {
     await server.stop()
+  }
+})
+
+test('exports GraphQL successes and errors as distinct Prometheus samples', async () => {
+  const exporter = new PrometheusExporter({ preventServerStart: true })
+  const provider = new MeterProvider({ readers: [exporter] })
+  const server = createServer(mockClient())
+  server.addPlugin(
+    createMetricsPlugin(provider.getMeter('frame-inventory-bff')),
+  )
+
+  try {
+    await server.executeOperation({ query: 'query ClientLabel { __typename }' })
+    await server.executeOperation({ query: '{ frames(page: -1) { page } }' })
+    await server.executeOperation({ query: '{ missingField }' })
+
+    const { resourceMetrics } = await exporter.collect()
+    const samples = new PrometheusSerializer().serialize(resourceMetrics)
+    expect(samples).toMatch(
+      /bff_graphql_request_duration_seconds_count\{[^\n]*operation_type="query"[^\n]*outcome="success"[^\n]*\} 1\n/,
+    )
+    expect(samples).toMatch(
+      /bff_graphql_request_duration_seconds_count\{[^\n]*operation_type="query"[^\n]*outcome="error"[^\n]*\} 1\n/,
+    )
+    expect(samples).toMatch(
+      /bff_graphql_request_duration_seconds_count\{[^\n]*operation_type="unknown"[^\n]*outcome="error"[^\n]*\} 1\n/,
+    )
+    expect(samples).toMatch(/bff_graphql_requests_in_flight\{[^\n]*\} 0\n/)
+    expect(samples).toContain('bff_nodejs_event_loop_time_seconds_total{')
+    expect(samples).not.toContain('ClientLabel')
+  } finally {
+    await server.stop()
+    await provider.shutdown()
+  }
+})
+
+test('exports resolver latency by schema field for queries and mutations', async () => {
+  const exporter = new PrometheusExporter({ preventServerStart: true })
+  const provider = new MeterProvider({ readers: [exporter] })
+  const client = mockClient()
+  client.listFrames.mockImplementation((_request, _options, callback) => {
+    callback(null, { items: [], page: 0, size: 25, hasNext: false })
+  })
+  client.deleteFrame.mockImplementation((_request, _options, callback) => {
+    callback(null, {})
+  })
+  const server = createServer(client)
+  server.addPlugin(
+    createMetricsPlugin(provider.getMeter('frame-inventory-bff')),
+  )
+
+  try {
+    await server.executeOperation({
+      query: `query ClientQuery {
+        aliasedFrames: frames { page }
+        frame(frameId: "") { frameId }
+        __typename
+        secondList: frames(page: -1) { page }
+      }`,
+    })
+    await server.executeOperation({
+      query: `mutation ClientMutation {
+        aliasedDelete: deleteFrame(frameId: "FRAME-001")
+      }`,
+    })
+
+    const { resourceMetrics } = await exporter.collect()
+    const samples = new PrometheusSerializer().serialize(resourceMetrics)
+    const counts = samples
+      .split('\n')
+      .filter((line) =>
+        line.startsWith('bff_graphql_root_field_duration_seconds_count{'),
+      )
+    expect(counts).toHaveLength(3)
+    expect(counts).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/operation_type="query".*field="frames".*\} 2$/),
+        expect.stringMatching(/operation_type="query".*field="frame".*\} 1$/),
+        expect.stringMatching(
+          /operation_type="mutation".*field="deleteFrame".*\} 1$/,
+        ),
+      ]),
+    )
+    expect(samples).not.toMatch(
+      /ClientQuery|ClientMutation|aliasedFrames|aliasedDelete|FRAME-001/,
+    )
+  } finally {
+    await server.stop()
+    await provider.shutdown()
   }
 })
 
