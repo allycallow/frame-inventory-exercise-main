@@ -61,3 +61,23 @@ the event appears in Sentry with the expected stack trace and environment tag,
 then link the event on the issue. Remove the temporary exception and confirm
 `curl --fail http://localhost:8080/api/health` succeeds with the DSN configured
 and again after restarting the backend with the DSN unset.
+
+### Local import operator
+
+The import RPC service should attach `LocalImportIdentity` as a service-scoped
+interceptor. Existing frame RPCs do not use it. Enable Spring's `local-import`
+profile only for host-local development and set `INVENTORY_IMPORT_LOCAL_TOKEN`
+to a randomly generated 64-character lowercase hex value. Keep the credential
+out of source control and logs. The RPC accepts the credential as
+`authorization: Bearer <token>` only from a loopback peer and sets the fixed
+`local-import-operator` identity. The profile binds gRPC to IPv4 loopback.
+
+The import BFF must run on the same host, accept the credential only for import
+operations, and forward it alongside the existing correlation metadata. Do not
+derive operator identity from a browser-supplied ID or treat ordinary frame RPC
+authentication as an import credential. The single local operator can create
+DELTA jobs and request force overwrite. Apply the snapshot feature gate and
+scope validation separately before allowing FULL_SNAPSHOT. Persist the verified
+operator as job owner and check ownership before returning status or row
+diagnostics. Production imports remain disabled until an operator identity
+provider and permission policy are configured.
