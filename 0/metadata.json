@@ -1,0 +1,54 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8BZ5T3SVF386H3MBNJGRAS7",
+  "session_id": "01a217dc-71e3-7a03-9829-ad0c5702ad11",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-26T13:02:06.212343Z",
+  "branch": "alex/glo-17-add-business-metrics-in-grafana",
+  "checkpoints_count": 2,
+  "save_step_count": 1,
+  "files_touched": [
+    "README.md",
+    "monitoring/dashboards/frame-inventory-backend.json",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameService.java",
+    "src/backend/src/test/java/com/global/ct/frameinventory/frame/FrameGrpcTests.java",
+    "src/backend/src/test/java/com/global/ct/frameinventory/frame/FrameServiceTests.java"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "f5a42f8a3da8",
+  "checkpoint_transcript_start": 749,
+  "transcript_lines_at_start": 749,
+  "compact_transcript_start": 168,
+  "token_usage": {
+    "input_tokens": 201,
+    "cache_creation_tokens": 37942,
+    "cache_read_tokens": 8303141,
+    "output_tokens": 15549,
+    "api_call_count": 67
+  },
+  "session_token_usage": {
+    "input_tokens": 655,
+    "cache_creation_tokens": 138211,
+    "cache_read_tokens": 16675359,
+    "output_tokens": 32947,
+    "api_call_count": 181
+  },
+  "redaction": {
+    "replacements": 1,
+    "layers": {
+      "betterleaks": 1,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 8
+  }
+}

@@ -1,0 +1,13 @@
+nice can you look at this ticket https://linear.app/upfrontbeats/issue/GLO-17/add-business-metrics-in-grafana I want you to review gRCP endpoints and add metrics you think are worthy of recording such as frame created. Update linear ticket when finished
+
+---
+
+just merged #8
+
+---
+
+put them in the same dashboard aa Frame Inventory Backend
+
+---
+
+open PR

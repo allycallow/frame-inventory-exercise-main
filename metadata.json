@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8BZ5T3SVF386H3MBNJGRAS7",
+  "strategy": "manual-commit",
+  "branch": "alex/glo-17-add-business-metrics-in-grafana",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "README.md",
+    "monitoring/dashboards/frame-inventory-backend.json",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameService.java",
+    "src/backend/src/test/java/com/global/ct/frameinventory/frame/FrameGrpcTests.java",
+    "src/backend/src/test/java/com/global/ct/frameinventory/frame/FrameServiceTests.java"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 201,
+    "cache_creation_tokens": 37942,
+    "cache_read_tokens": 8303141,
+    "output_tokens": 15549,
+    "api_call_count": 67
+  },
+  "redaction": {
+    "replacements": 1,
+    "layers": {
+      "betterleaks": 1,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  }
+}
