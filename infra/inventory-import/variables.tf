@@ -13,8 +13,8 @@ variable "name_prefix" {
   type        = string
 
   validation {
-    condition     = can(regex("^[a-zA-Z0-9_-]{1,60}$", var.name_prefix))
-    error_message = "Use 1–60 ASCII letters, digits, hyphens, or underscores."
+    condition     = can(regex("^[a-zA-Z0-9_-]{1,59}$", var.name_prefix))
+    error_message = "Use 1–59 ASCII letters, digits, hyphens, or underscores."
   }
 }
 
