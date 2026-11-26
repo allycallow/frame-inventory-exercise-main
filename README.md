@@ -25,7 +25,7 @@ docker compose up --build
 |-----------------------|-----------|----------------|--------------------------------------------------------|
 | frontend              | 3000      | 3000           | Next.js dev server, proxies `/api` to the backend     |
 | backend               | 8080      | 8080           | Spring Boot, exposes `GET /api/health`                 |
-| postgres              | 5432      | 5432           | Provisioned for frame data                             |
+| postgres              | 5432      | 5432           | Spring Boot applies the inventory schema via Flyway    |
 | opensearch            | 9200, 9600 | 9200, 9600    | Single-node, security plugin disabled for local use    |
 | opensearch-dashboards | 5601      | 5601           | UI for the OpenSearch cluster above                    |
 
@@ -62,7 +62,11 @@ Once the stack is up, check both entry points.
 
 ### Backend
 
+Start PostgreSQL before running the backend locally. Spring Boot applies the
+Flyway migrations on startup.
+
 ```bash
+docker compose up -d --wait postgres
 cd src/backend
 ./gradlew bootRun
 ```

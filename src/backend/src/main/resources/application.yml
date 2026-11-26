@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: frame-inventory-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/frames
+    username: app
+    password: app
 
 management:
   endpoints:
