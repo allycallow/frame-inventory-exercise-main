@@ -3,6 +3,7 @@ package com.global.ct.frameinventory.frame;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import com.global.ct.frameinventory.common.InventoryWriteLock;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -18,12 +19,14 @@ class FrameService {
     private static final Logger LOGGER = LoggerFactory.getLogger(FrameService.class);
 
     private final FrameRepository frames;
+    private final InventoryWriteLock inventoryLock;
     private final Counter framesCreated;
     private final Counter framesUpdated;
     private final Counter framesSoftDeleted;
 
-    FrameService(FrameRepository frames, MeterRegistry registry) {
+    FrameService(FrameRepository frames, MeterRegistry registry, InventoryWriteLock inventoryLock) {
         this.frames = frames;
+        this.inventoryLock = inventoryLock;
         this.framesCreated = lifecycleCounter(registry, "created");
         this.framesUpdated = lifecycleCounter(registry, "updated");
         this.framesSoftDeleted = lifecycleCounter(registry, "soft_deleted");
@@ -55,6 +58,7 @@ class FrameService {
 
     @Transactional
     FrameVersion create(String frameId, FrameAttributes attributes) {
+        inventoryLock.acquireShared();
         if (!frames.reserveId(frameId)) {
             throw FrameProblem.reserved();
         }
@@ -72,6 +76,7 @@ class FrameService {
 
     @Transactional
     FrameVersion edit(String frameId, long expectedVersionId, FrameAttributes attributes) {
+        inventoryLock.acquireShared();
         Long current = lockAndCheckVersion(frameId, expectedVersionId);
         OffsetDateTime transition = frames.close(current, null);
         long versionId = frames.append(frameId, attributes, current, transition, "MANUAL_EDIT");
@@ -90,6 +95,7 @@ class FrameService {
 
     @Transactional
     void delete(String frameId, Long expectedVersionId) {
+        inventoryLock.acquireShared();
         Long current = lockAndCheckVersion(frameId, expectedVersionId);
         if (current != null) {
             frames.close(current, "MANUAL_DELETE");

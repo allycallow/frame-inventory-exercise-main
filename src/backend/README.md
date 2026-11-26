@@ -151,3 +151,24 @@ bound PENDING job. A valid event whose object binding never committed can fail
 an AWAITING_UPLOAD job directly. An indeterminate lookup retries without
 changing job state. Expired or terminal jobs and notifications for another
 version cannot restart an import.
+
+### Run the DELTA worker
+
+Enable `INVENTORY_IMPORT_WORKER_ENABLED=true` alongside the local import and
+dispatch settings. The worker reads the version pinned to the job. It restarts
+staging from that object if a retry loses unlogged data. A complete staging
+generation must match the durable job claim before it can be applied.
+
+DELTA expects the 45-column header from
+[`inventory_frame.csv`](../../data/inventory_frame.csv). The columns can be
+reordered. The parser accepts UTF-8 with an optional BOM and quoted multiline
+values. Source timestamps require seconds and accept up to six fractional
+digits. They are interpreted as UTC. Logical records with invalid fields or
+repeated frame IDs are rejected with row diagnostics. Invalid UTF-8, broken
+CSV quoting, invalid headers, and file limit breaches fail the job before
+inventory writes.
+
+Accepted frame versions, references, ordered links, row outcomes, and job
+counts commit together. A replay of the same source timestamp and canonical
+payload creates no extra version. Retained row diagnostics record conflicts,
+including both hashes for an equal-timestamp collision.

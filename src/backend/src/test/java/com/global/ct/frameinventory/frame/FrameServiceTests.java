@@ -3,6 +3,7 @@ package com.global.ct.frameinventory.frame;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
+import com.global.ct.frameinventory.common.InventoryWriteLock;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,13 +25,14 @@ class FrameServiceTests {
     private static final long NEXT = 43L;
 
     @Mock FrameRepository repository;
+    @Mock InventoryWriteLock inventoryLock;
     @Mock FrameAttributes attributes;
     @Mock FrameVersion version;
     private FrameService service;
 
     @BeforeEach
     void setUp() {
-        service = new FrameService(repository, new SimpleMeterRegistry());
+        service = new FrameService(repository, new SimpleMeterRegistry(), inventoryLock);
     }
 
     @Test
