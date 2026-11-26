@@ -1,0 +1,128 @@
+syntax = "proto3";
+
+package frameinventory.v1;
+
+option java_package = "com.global.ct.frameinventory.grpc.v1";
+option java_multiple_files = true;
+option java_outer_classname = "FramesProto";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+service FrameManagement {
+  rpc ListFrames(ListFramesRequest) returns (ListFramesResponse);
+  rpc GetFrame(GetFrameRequest) returns (Frame);
+  rpc GetFrameHistory(GetFrameHistoryRequest) returns (GetFrameHistoryResponse);
+  rpc CreateFrame(CreateFrameRequest) returns (Frame);
+  rpc UpdateFrame(UpdateFrameRequest) returns (Frame);
+  rpc DeleteFrame(DeleteFrameRequest) returns (google.protobuf.Empty);
+}
+
+message ListFramesRequest {
+  // Zero-based page. Defaults to 0.
+  optional int32 page = 1;
+  // Defaults to 25. Valid values are 1 through 50.
+  optional int32 size = 2;
+}
+
+message ListFramesResponse {
+  repeated Frame items = 1;
+  int32 page = 2;
+  int32 size = 3;
+  bool has_next = 4;
+}
+
+message GetFrameRequest {
+  string frame_id = 1;
+}
+
+message GetFrameHistoryRequest {
+  string frame_id = 1;
+}
+
+message GetFrameHistoryResponse {
+  // Newest first, with version ID descending as a tie break.
+  repeated Frame versions = 1;
+}
+
+message CreateFrameRequest {
+  // A case-sensitive identifier that can be used only once.
+  string frame_id = 1;
+  FrameData attributes = 2;
+}
+
+message UpdateFrameRequest {
+  string frame_id = 1;
+  // Must match the current version.
+  int64 expected_version_id = 2;
+  // Replaces writable attributes. Omitted optional fields are cleared.
+  FrameData attributes = 3;
+}
+
+message DeleteFrameRequest {
+  string frame_id = 1;
+  // If absent the delete applies to the current version.
+  optional int64 expected_version_id = 2;
+}
+
+message Frame {
+  string frame_id = 1;
+  int64 version_id = 2;
+  google.protobuf.Timestamp valid_from = 3;
+  google.protobuf.Timestamp valid_to = 4;
+  bool current = 5;
+  optional string change_source = 6;
+  optional string closed_by_change_source = 7;
+  // Local source timestamps in ISO 8601 format without an offset.
+  optional string source_created_at = 8;
+  optional string source_modified_at = 9;
+  FrameData attributes = 10;
+  map<string, string> external_references = 11;
+  repeated string linked_frame_ids = 12;
+}
+
+message FrameData {
+  // Manual writes accept LIVE, PENDING, MAINTENANCE, BLOCKED, or DRAFT.
+  string status = 1;
+  optional string status_reason = 2;
+  optional string site_no = 3;
+  optional string inventory_site_no = 4;
+  optional string panel_number = 5;
+  optional string location_id = 6;
+  optional string environment = 7;
+  optional string address = 8;
+  optional string station = 9;
+  optional string airport = 10;
+  // Decimal strings retain PostgreSQL numeric precision.
+  optional string latitude = 11;
+  optional string longitude = 12;
+  optional int32 distance_to_closest_school = 13;
+  FrameLocation location = 14;
+  FrameFormat format = 15;
+  optional string size_code = 16;
+  optional string aspect_ratio_code = 17;
+  optional string t_size = 18;
+  optional int32 pixel_height = 19;
+  optional int32 pixel_width = 20;
+  optional int32 illumination_type_id = 21;
+  optional int32 number_of_slots = 22;
+  optional string impact_weight = 23;
+  bool premium = 24;
+  optional string production_rate_card = 25;
+  optional string production_rate_card_legacy = 26;
+  optional string pricing_grade = 27;
+}
+
+message FrameLocation {
+  string country_code = 1;
+  string region = 2;
+  string town = 3;
+  string postcode = 4;
+}
+
+message FrameFormat {
+  // Manual writes accept CLASSIC or DIGITAL.
+  string technology = 1;
+  string format_code = 2;
+  string size_group_code = 3;
+}
