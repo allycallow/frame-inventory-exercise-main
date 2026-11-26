@@ -2,7 +2,7 @@
 
 ## Overview
 
-The backend is a Java 21 Spring Boot application. It uses Spring MVC, Actuator, and JDBC. Spring Boot applies Flyway migrations against PostgreSQL at startup. The Docker image builds a Spring Boot JAR and runs it on Java 21. [build.gradle:languageVersion] [build.gradle:dependencies] [Dockerfile:RUN] [Dockerfile:ENTRYPOINT]
+The backend is a Java 21 Spring Boot application. Spring gRPC serves frame management on port 9090. Spring MVC and Actuator serve health endpoints on port 8080. Spring Boot applies Flyway migrations against PostgreSQL at startup. The Docker image builds a Spring Boot JAR and runs it on Java 21. [build.gradle:languageVersion] [build.gradle:dependencies] [Dockerfile:RUN] [Dockerfile:ENTRYPOINT]
 
 ## Subdirectories & Boundaries
 
@@ -20,9 +20,28 @@ and `SPRING_DATASOURCE_PASSWORD` when connecting to a different database.
 
 ## Verification
 
-From `src/backend`, run `./gradlew test` for the database-free Spring context
-check. To verify the migration, start the backend with PostgreSQL and check
-`flyway_schema_history` for a successful version `1` entry.
+From `src/backend`, run `./gradlew test` with Java 21 and Docker available. The
+suite covers unit tests and calls the gRPC service through a generated client
+against PostgreSQL 18.6 using Testcontainers. Flyway applies both schema
+migrations during the integration tests.
+
+## Frame management API
+
+The [Protobuf definition](src/main/proto/frameinventory/v1/frames.proto) declares
+the six RPCs. Run `./gradlew generateProto` to generate the Java messages and
+stubs. The [API contract](../../concepts_brief.md#grpc-contract) describes
+pagination, request fields, errors, and version checks.
+
+With the backend running, call the service from `src/backend` using `grpcurl`.
+
+```sh
+grpcurl -plaintext -import-path src/main/proto -proto frameinventory/v1/frames.proto \
+  -d '{"page":0,"size":25}' localhost:9090 frameinventory.v1.FrameManagement/ListFrames
+```
+
+The backend writes structured JSON logs to the console. Set
+`LOGGING_LEVEL_COM_GLOBAL_CT_FRAMEINVENTORY_FRAME=DEBUG` to include frame RPC
+parameters, version checks, lookup results, and handled client errors.
 
 ## Sentry error reporting
 

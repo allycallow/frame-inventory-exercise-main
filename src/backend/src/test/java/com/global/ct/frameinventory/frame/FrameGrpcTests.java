@@ -1,0 +1,409 @@
+package com.global.ct.frameinventory.frame;
+
+import java.util.List;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import javax.sql.DataSource;
+
+import com.google.protobuf.Empty;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.rpc.BadRequest;
+import com.google.rpc.ErrorInfo;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import io.grpc.protobuf.StatusProto;
+import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.grpc.client.GrpcChannelFactory;
+import org.springframework.grpc.test.AutoConfigureInProcessTransport;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+import com.global.ct.frameinventory.grpc.v1.CreateFrameRequest;
+import com.global.ct.frameinventory.grpc.v1.DeleteFrameRequest;
+import com.global.ct.frameinventory.grpc.v1.Frame;
+import com.global.ct.frameinventory.grpc.v1.FrameData;
+import com.global.ct.frameinventory.grpc.v1.FrameFormat;
+import com.global.ct.frameinventory.grpc.v1.FrameLocation;
+import com.global.ct.frameinventory.grpc.v1.FrameManagementGrpc;
+import com.global.ct.frameinventory.grpc.v1.GetFrameHistoryRequest;
+import com.global.ct.frameinventory.grpc.v1.GetFrameRequest;
+import com.global.ct.frameinventory.grpc.v1.ListFramesRequest;
+import com.global.ct.frameinventory.grpc.v1.UpdateFrameRequest;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+@SpringBootTest(properties = "logging.level.com.global.ct.frameinventory.frame=DEBUG")
+@AutoConfigureInProcessTransport
+@Testcontainers
+class FrameGrpcTests {
+    private static final String FRAME_ID = "FRM-1";
+    private static final String MISSING = "The frame was not found.";
+    private static final String STALE = "The frame has changed. Fetch its current version before retrying.";
+    private static final String RETIRED = "The frame no longer has a current version.";
+    private static final String RESERVED = "This frame ID has already been used.";
+
+    @Container
+    @ServiceConnection
+    static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:18.6");
+
+    private final FrameManagementGrpc.FrameManagementBlockingStub client;
+    private final JdbcClient jdbc;
+    private final DataSource dataSource;
+    private final FrameService service;
+    private final TransactionTemplate transactions;
+
+    @Autowired
+    FrameGrpcTests(
+        GrpcChannelFactory channels, JdbcClient jdbc, DataSource dataSource, FrameService service,
+        TransactionTemplate transactions
+    ) {
+        this.client = FrameManagementGrpc.newBlockingStub(channels.createChannel("local"));
+        this.jdbc = jdbc;
+        this.dataSource = dataSource;
+        this.service = service;
+        this.transactions = transactions;
+    }
+
+    @BeforeEach
+    void resetInventory() {
+        jdbc.sql("TRUNCATE frame, region, frame_format RESTART IDENTITY CASCADE").update();
+    }
+
+    @Test
+    void createsEditsAndDeletesAFrameWhileKeepingItsHistoryAndId() throws Exception {
+        Frame created = create(FRAME_ID);
+        long firstVersion = created.getVersionId();
+        assertThat(created.getCurrent()).isTrue();
+        assertThat(created.getChangeSource()).isEqualTo("MANUAL_CREATE");
+        assertThat(created.hasValidTo()).isFalse();
+
+        var alreadyExists = assertError(Status.Code.ALREADY_EXISTS, RESERVED, () -> create(FRAME_ID));
+        assertThat(info(alreadyExists).getReason()).isEqualTo("FRAME_ID_RESERVED");
+
+        Frame current = get(FRAME_ID);
+        assertThat(current.getVersionId()).isEqualTo(firstVersion);
+        assertThat(current.getAttributes().getLocation().getPostcode()).isEqualTo("SW1A 1AA");
+        assertThat(current.getAttributes().getFormat().getSizeGroupCode()).isEqualTo("006");
+        assertThat(current.getAttributes().getLatitude()).isEqualTo("51.501");
+        assertThat(current.getAttributes().getLongitude()).isEqualTo("-0.142");
+
+        Frame edited = client.updateFrame(edit(FRAME_ID, firstVersion, "MAINTENANCE"));
+        long secondVersion = edited.getVersionId();
+        assertThat(secondVersion).isNotEqualTo(firstVersion);
+        assertThat(edited.getChangeSource()).isEqualTo("MANUAL_EDIT");
+        assertThat(edited.getAttributes().hasLocation()).isFalse();
+
+        var stale = assertError(Status.Code.ABORTED, STALE,
+            () -> client.updateFrame(edit(FRAME_ID, firstVersion, "BLOCKED")));
+        assertThat(info(stale).getReason()).isEqualTo("STALE_FRAME_VERSION");
+        assertThat(info(stale).getMetadataMap()).containsEntry("currentVersionId", Long.toString(secondVersion));
+
+        assertError(Status.Code.ABORTED, STALE, () -> delete(FRAME_ID, firstVersion));
+        assertThat(delete(FRAME_ID, secondVersion)).isEqualTo(Empty.getDefaultInstance());
+        assertThat(delete(FRAME_ID, null)).isEqualTo(Empty.getDefaultInstance());
+        assertError(Status.Code.ABORTED, RETIRED, () -> delete(FRAME_ID, secondVersion));
+        assertError(Status.Code.NOT_FOUND, MISSING, () -> get(FRAME_ID));
+        assertThat(client.listFrames(ListFramesRequest.getDefaultInstance()).getItemsList()).isEmpty();
+
+        var versions = history(FRAME_ID);
+        assertThat(versions).extracting(Frame::getVersionId).containsExactly(secondVersion, firstVersion);
+        Frame closed = versions.getFirst();
+        Frame first = versions.getLast();
+        assertThat(closed.getAttributes().getStatus()).isEqualTo("MAINTENANCE");
+        assertThat(closed.getCurrent()).isFalse();
+        assertThat(closed.getChangeSource()).isEqualTo("MANUAL_EDIT");
+        assertThat(closed.getClosedByChangeSource()).isEqualTo("MANUAL_DELETE");
+        assertThat(first.getChangeSource()).isEqualTo("MANUAL_CREATE");
+        assertThat(first.hasClosedByChangeSource()).isFalse();
+        assertThat(first.getValidTo()).isEqualTo(closed.getValidFrom());
+        assertThat(closed.hasValidTo()).isTrue();
+
+        assertError(Status.Code.ALREADY_EXISTS, RESERVED, () -> create(FRAME_ID));
+    }
+
+    @Test
+    void listsCurrentFramesInStablePages() {
+        create("FRM-3");
+        create(FRAME_ID);
+        create("FRM-2");
+        delete("FRM-2", null);
+
+        assertThat(history("FRM-2")).singleElement().satisfies(frame -> {
+            assertThat(frame.getChangeSource()).isEqualTo("MANUAL_CREATE");
+            assertThat(frame.getClosedByChangeSource()).isEqualTo("MANUAL_DELETE");
+        });
+
+        var defaults = client.listFrames(ListFramesRequest.getDefaultInstance());
+        assertThat(defaults.getSize()).isEqualTo(25);
+        assertThat(defaults.getItemsList()).extracting(Frame::getFrameId).containsExactly(FRAME_ID, "FRM-3");
+
+        var first = client.listFrames(ListFramesRequest.newBuilder().setSize(1).build());
+        assertThat(first.getItemsList()).extracting(Frame::getFrameId).containsExactly(FRAME_ID);
+        assertThat(first.getHasNext()).isTrue();
+        var second = client.listFrames(ListFramesRequest.newBuilder().setPage(1).setSize(1).build());
+        assertThat(second.getItemsList()).extracting(Frame::getFrameId).containsExactly("FRM-3");
+        assertThat(second.getHasNext()).isFalse();
+        var far = client.listFrames(ListFramesRequest.newBuilder().setPage(Integer.MAX_VALUE).setSize(50).build());
+        assertThat(far.getItemsList()).isEmpty();
+        assertThat(far.getHasNext()).isFalse();
+    }
+
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void logsCommittedLifecycleEventsAndTheFullCurrentCount(CapturedOutput output) {
+        long first = create(FRAME_ID).getVersionId();
+        long second = client.updateFrame(edit(FRAME_ID, first, "PENDING")).getVersionId();
+        assertError(Status.Code.ABORTED, STALE, () -> delete(FRAME_ID, first));
+        assertError(Status.Code.ALREADY_EXISTS, RESERVED, () -> create(FRAME_ID));
+        assertError(Status.Code.NOT_FOUND, MISSING, () -> get("MISSING"));
+        assertError(Status.Code.INVALID_ARGUMENT, "One or more request values are invalid.",
+            () -> client.listFrames(ListFramesRequest.newBuilder().setSize(0).build()));
+        create("FRM-2");
+        delete(FRAME_ID, second);
+        client.listFrames(ListFramesRequest.newBuilder().setPage(9).setSize(2).build());
+
+        transactions.executeWithoutResult(transaction -> {
+            service.create("ROLLED-BACK", FrameProtoMapper.toAttributes(FrameData.newBuilder().setStatus("LIVE").build()));
+            transaction.setRollbackOnly();
+        });
+
+        var logs = output.getOut().lines().toList();
+        assertThat(logs).anySatisfy(line -> assertThat(line).contains(
+            "\"message\":\"frame.created\"", "\"frameId\":\"FRM-1\"", "\"versionId\":" + first
+        ));
+        assertThat(logs).anySatisfy(line -> assertThat(line).contains(
+            "\"message\":\"frame.updated\"", "\"frameId\":\"FRM-1\"", "\"previousVersionId\":" + first,
+            "\"newVersionId\":" + second
+        ));
+        assertThat(logs).anySatisfy(line -> assertThat(line).contains(
+            "\"message\":\"frame.soft_deleted\"", "\"frameId\":\"FRM-1\"", "\"closedVersionId\":" + second
+        ));
+        assertThat(logs).anySatisfy(line -> assertThat(line).contains(
+            "\"message\":\"frame.listed\"", "\"page\":9", "\"size\":2", "\"totalElements\":1"
+        ));
+        assertThat(logs).anySatisfy(line -> assertThat(line).contains(
+            "\"message\":\"frame.version_checked\"", "\"level\":\"DEBUG\"",
+            "\"expectedVersionId\":" + first, "\"currentVersionId\":" + second
+        ));
+        assertThat(logs).anySatisfy(line -> assertThat(line).contains(
+            "\"message\":\"frame.rpc_received\"", "\"level\":\"DEBUG\"", "\"rpc\":\"ListFrames\"", "\"page\":9"
+        ));
+        for (String resolution : List.of("upserted", "reused")) {
+            assertThat(logs).anySatisfy(line -> assertThat(line).contains(
+                "\"message\":\"frame.lookup_resolved\"", "\"level\":\"DEBUG\"", "\"lookup\":\"postcode\"",
+                "\"resolution\":\"" + resolution + "\""
+            ));
+        }
+        for (String status : List.of("ABORTED", "ALREADY_EXISTS", "NOT_FOUND", "INVALID_ARGUMENT")) {
+            assertThat(logs).anySatisfy(line -> assertThat(line).contains(
+                "\"message\":\"frame.client_error\"", "\"level\":\"DEBUG\"", "\"grpcStatus\":\"" + status + "\""
+            ));
+        }
+        assertThat(output.getOut()).doesNotContain("\"frameId\":\"ROLLED-BACK\"", "SW1A 1AA");
+    }
+
+    @Test
+    void reportsUnknownFrameIds() throws Exception {
+        var missing = assertError(Status.Code.NOT_FOUND, MISSING, () -> get("missing"));
+        assertThat(info(missing).getReason()).isEqualTo("FRAME_NOT_FOUND");
+        assertError(Status.Code.NOT_FOUND, MISSING, () -> history("missing"));
+        assertError(Status.Code.NOT_FOUND, MISSING, () -> client.updateFrame(edit("missing", 1, "LIVE")));
+        assertError(Status.Code.NOT_FOUND, MISSING, () -> delete("missing", null));
+    }
+
+    @Test
+    void reportsInvalidFieldsAsStructuredGrpcErrors() throws Exception {
+        var invalid = CreateFrameRequest.newBuilder().setFrameId(" ").setAttributes(FrameData.newBuilder()
+            .setStatus("UNKNOWN")
+            .setLongitude("181")
+            .setLatitude("91")
+            .setPixelWidth(0)
+            .setNumberOfSlots(-1)
+            .setDistanceToClosestSchool(-5)
+            .setFormat(FrameFormat.newBuilder().setTechnology("UNKNOWN").setFormatCode("D6").setSizeGroupCode("006"))
+        ).build();
+
+        assertThat(invalidFields(() -> client.createFrame(invalid))).containsExactly(
+            "attributes.distanceToClosestSchool", "attributes.format.technology", "attributes.latitude",
+            "attributes.longitude", "attributes.numberOfSlots", "attributes.pixelWidth", "attributes.status", "frameId"
+        );
+
+        assertThat(invalidFields(() -> client.createFrame(CreateFrameRequest.newBuilder()
+            .setFrameId(FRAME_ID)
+            .setAttributes(FrameData.newBuilder().setStatus("LIVE").setLatitude("north"))
+            .build()))).containsExactly("attributes.latitude");
+        assertThat(invalidFields(() -> client.createFrame(CreateFrameRequest.newBuilder().setFrameId(FRAME_ID).build())))
+            .containsExactly("attributes");
+        assertThat(invalidFields(() -> client.updateFrame(edit(FRAME_ID, 0, "LIVE"))))
+            .containsExactly("expectedVersionId");
+        assertThat(invalidFields(() -> get(" "))).containsExactly("frameId");
+        assertThat(invalidFields(() -> client.listFrames(ListFramesRequest.newBuilder().setPage(-1).setSize(51).build())))
+            .containsExactly("page", "size");
+        assertThat(invalidFields(() -> client.listFrames(ListFramesRequest.newBuilder().setSize(0).build())))
+            .containsExactly("size");
+        assertThat(invalidFields(() -> delete(FRAME_ID, 0L))).containsExactly("expectedVersionId");
+    }
+
+    @Test
+    void editsImportedFramesWithoutLosingSourceOrVersionOwnedReferences() {
+        jdbc.sql("INSERT INTO frame (frame_id) VALUES ('IMPORTED')").update();
+        long importedVersion = jdbc.sql("""
+            INSERT INTO frame_version (frame_id, valid_from, status, source_created_at, source_modified_at)
+            VALUES ('IMPORTED', clock_timestamp(), 'LIVE', '2022-08-01 11:00:00', '2022-08-02 12:00:00')
+            RETURNING version_id
+            """).query(Long.class).single();
+        jdbc.sql("""
+            INSERT INTO frame_version_external_reference (version_id, reference_type, reference_value)
+            VALUES (:version, 'PRICE_ENTITY', '123')
+            """).param("version", importedVersion).update();
+        jdbc.sql("""
+            INSERT INTO frame_version_link (version_id, position, linked_frame_id)
+            VALUES (:version, 1, 'FRM-3'), (:version, 2, 'FRM-2')
+            """).param("version", importedVersion).update();
+
+        Frame edited = client.updateFrame(edit("IMPORTED", importedVersion, "DRAFT"));
+        assertThat(edited.getSourceCreatedAt()).isEqualTo("2022-08-01T11:00:00");
+        assertThat(edited.getSourceModifiedAt()).isEqualTo("2022-08-02T12:00:00");
+        assertThat(edited.getExternalReferencesMap()).containsEntry("PRICE_ENTITY", "123");
+        assertThat(edited.getLinkedFrameIdsList()).containsExactly("FRM-3", "FRM-2");
+    }
+
+    @Test
+    void closesThePriorVersionAfterItsStartWhenTheClockIsBehindTheStoredVersion() {
+        jdbc.sql("INSERT INTO frame (frame_id) VALUES ('FUTURE')").update();
+        long version = jdbc.sql("""
+            INSERT INTO frame_version (frame_id, valid_from, status)
+            VALUES ('FUTURE', '2099-01-01T00:00:00Z', 'LIVE')
+            RETURNING version_id
+            """).query(Long.class).single();
+
+        var next = client.updateFrame(edit("FUTURE", version, "DRAFT"));
+        assertThat(next.getValidFrom().getSeconds()).isEqualTo(4070908800L);
+        assertThat(next.getValidFrom().getNanos()).isEqualTo(1000);
+        assertThat(history("FUTURE").getLast().getValidTo()).isEqualTo(next.getValidFrom());
+    }
+
+    @Test
+    void editsRacingWithTheSameTokenProduceOnlyOneReplacement() throws Exception {
+        long first = create(FRAME_ID).getVersionId();
+        var barrier = new CyclicBarrier(2);
+
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var firstEdit = executor.submit(() -> raceEdit(first, barrier, "BLOCKED"));
+            var secondEdit = executor.submit(() -> raceEdit(first, barrier, "PENDING"));
+            assertThat(List.of(firstEdit.get(10, TimeUnit.SECONDS), secondEdit.get(10, TimeUnit.SECONDS)))
+                .containsExactlyInAnyOrder(Status.Code.OK, Status.Code.ABORTED);
+        }
+
+        assertThat(history(FRAME_ID)).extracting(Frame::getCurrent).containsExactly(true, false);
+    }
+
+    @Test
+    void failedVersionInsertRollsBackTheClosure() {
+        long first = create(FRAME_ID).getVersionId();
+        var invalidAttributes = new FrameAttributes(
+            null, null, null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null, null, null, null,
+            null, null, null, false, null, null, null
+        );
+
+        assertThatThrownBy(() -> service.edit(FRAME_ID, first, invalidAttributes))
+            .isInstanceOf(DataIntegrityViolationException.class);
+
+        assertThat(history(FRAME_ID)).singleElement().satisfies(frame -> {
+            assertThat(frame.getVersionId()).isEqualTo(first);
+            assertThat(frame.getCurrent()).isTrue();
+        });
+    }
+
+    @Test
+    void flywayUpgradesADataBearingV1Schema() {
+        Flyway.configure().dataSource(dataSource).schemas("upgrade_test").target("1").load().migrate();
+        jdbc.sql("INSERT INTO upgrade_test.frame VALUES ('legacy')").update();
+        jdbc.sql("""
+            INSERT INTO upgrade_test.frame_version (frame_id, valid_from, status)
+            VALUES ('legacy', clock_timestamp(), 'LIVE')
+            """).update();
+
+        Flyway.configure().dataSource(dataSource).schemas("upgrade_test").load().migrate();
+
+        assertThat(jdbc.sql("""
+            SELECT count(*) FROM upgrade_test.frame_version
+            WHERE frame_id = 'legacy' AND change_source IS NULL AND closed_by_change_source IS NULL
+            """).query(Integer.class).single()).isEqualTo(1);
+    }
+
+    private List<String> invalidFields(Executable call) throws InvalidProtocolBufferException {
+        var failure = assertError(Status.Code.INVALID_ARGUMENT, "One or more request values are invalid.", call);
+        return StatusProto.fromThrowable(failure).getDetails(0).unpack(BadRequest.class).getFieldViolationsList()
+            .stream().map(violation -> violation.getField()).toList();
+    }
+
+    private static ErrorInfo info(StatusRuntimeException failure) throws InvalidProtocolBufferException {
+        return StatusProto.fromThrowable(failure).getDetails(0).unpack(ErrorInfo.class);
+    }
+
+    private static StatusRuntimeException assertError(Status.Code expected, String message, Executable call) {
+        var failure = assertThrows(StatusRuntimeException.class, call);
+        assertThat(failure.getStatus().getCode()).isEqualTo(expected);
+        assertThat(failure.getStatus().getDescription()).isEqualTo(message);
+        return failure;
+    }
+
+    private Status.Code raceEdit(long first, CyclicBarrier barrier, String status) throws Exception {
+        barrier.await(10, TimeUnit.SECONDS);
+        try {
+            client.updateFrame(edit(FRAME_ID, first, status));
+            return Status.Code.OK;
+        } catch (StatusRuntimeException exception) {
+            return exception.getStatus().getCode();
+        }
+    }
+
+    private Frame create(String frameId) {
+        return client.createFrame(CreateFrameRequest.newBuilder().setFrameId(frameId)
+            .setAttributes(FrameData.newBuilder().setStatus("LIVE").setLatitude("51.501").setLongitude("-0.142")
+                .setLocation(FrameLocation.newBuilder()
+                    .setCountryCode("UK").setRegion("London").setTown("London").setPostcode("SW1A 1AA"))
+                .setFormat(FrameFormat.newBuilder().setTechnology("DIGITAL").setFormatCode("D6").setSizeGroupCode("006")))
+            .build());
+    }
+
+    private Frame get(String frameId) {
+        return client.getFrame(GetFrameRequest.newBuilder().setFrameId(frameId).build());
+    }
+
+    private List<Frame> history(String frameId) {
+        return client.getFrameHistory(GetFrameHistoryRequest.newBuilder().setFrameId(frameId).build()).getVersionsList();
+    }
+
+    private Empty delete(String frameId, Long expectedVersionId) {
+        var request = DeleteFrameRequest.newBuilder().setFrameId(frameId);
+        if (expectedVersionId != null) {
+            request.setExpectedVersionId(expectedVersionId);
+        }
+        return client.deleteFrame(request.build());
+    }
+
+    private static UpdateFrameRequest edit(String frameId, long expectedVersionId, String status) {
+        return UpdateFrameRequest.newBuilder().setFrameId(frameId).setExpectedVersionId(expectedVersionId)
+            .setAttributes(FrameData.newBuilder().setStatus(status)).build();
+    }
+}

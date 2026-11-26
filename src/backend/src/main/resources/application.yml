@@ -1,9 +1,17 @@
 server:
   port: 8080
 
+logging:
+  structured:
+    format:
+      console: logstash
+
 spring:
   application:
     name: frame-inventory-backend
+  grpc:
+    server:
+      port: 9090
   datasource:
     url: jdbc:postgresql://localhost:5432/frames
     username: app
