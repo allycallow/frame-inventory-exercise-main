@@ -3,11 +3,13 @@
   "checkpoint_id": "01M8C84Z1MHV5QN1GEBPCB24SD",
   "strategy": "manual-commit",
   "branch": "alex/glo-25-setup-loki-for-logs",
-  "checkpoints_count": 2,
+  "checkpoints_count": 5,
   "files_touched": [
     "README.md",
     "docker-compose.yml",
-    "monitoring/grafana-datasource.yml"
+    "monitoring/config.alloy",
+    "monitoring/grafana-datasource.yml",
+    "monitoring/loki.yml"
   ],
   "sessions": [
     {
@@ -16,14 +18,21 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 24,
-    "cache_creation_tokens": 1280,
-    "cache_read_tokens": 504395,
-    "output_tokens": 585,
-    "api_call_count": 8
+    "input_tokens": 418,
+    "cache_creation_tokens": 69068,
+    "cache_read_tokens": 5386515,
+    "output_tokens": 8863,
+    "api_call_count": 102
   },
   "redaction": {
     "replacements": 0,

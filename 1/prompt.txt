@@ -1,0 +1,25 @@
+implement https://linear.app/upfrontbeats/issue/GLO-25/setup-loki-for-logs
+
+---
+
+❯ just up
+docker compose up --build
+[+] Running 8/8
+ ✘ alloy Error                 error creating temporary lease: write /var/lib/desktop-containerd/daemon/io.containerd.metadata.v1.bolt/meta.db: input/output error: unknown                                                                                 0.1s
+ ✘ prometheus Error            context canceled                                                                                                                                                                                                             0.2s
+ ✘ loki Error                  context canceled                                                                                                                                                                                                             0.1s
+ ✘ opensearch Error            context canceled                                                                                                                                                                                                             0.1s
+ ✘ opensearch-dashboards Error context canceled                                                                                                                                                                                                             0.1s
+ ✘ otel-collector Error        context canceled                                                                                                                                                                                                             0.2s
+ ✘ postgres Error              context canceled                                                                                                                                                                                                             0.2s
+ ✘ grafana Error               context canceled                                                                                                                                                                                                             0.1s
+Error response from daemon: error creating temporary lease: write /var/lib/desktop-containerd/daemon/io.containerd.metadata.v1.bolt/meta.db: input/output error: unknown
+error: recipe `up` failed on line 7 with exit code 18
+
+---
+
+lokin is running now
+
+---
+
+nice can update ticket description and open PR
