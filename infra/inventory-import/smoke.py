@@ -47,7 +47,11 @@ def main():
     parser.add_argument("--endpoint", help="Set for the local emulator only")
     args = parser.parse_args()
 
-    config = Config(signature_version="s3v4", s3={"addressing_style": "path" if args.endpoint else "auto"})
+    # Sign for the regional bucket endpoint, the same host the browser uploads to.
+    config = Config(signature_version="s3v4", s3={
+        "addressing_style": "path" if args.endpoint else "virtual",
+        "us_east_1_regional_endpoint": "regional",
+    })
     s3 = boto3.client("s3", region_name=args.region, endpoint_url=args.endpoint, config=config)
     sqs = boto3.client("sqs", region_name=args.region, endpoint_url=args.endpoint)
     key = f"uploads/{uuid.uuid4()}/inventory_frame.csv"
