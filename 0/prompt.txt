@@ -1,0 +1,9 @@
+implement https://linear.app/upfrontbeats/issue/GLO-24/add-sentry-to-bff-apollo-server
+
+---
+
+update linear ticket description
+
+---
+
+open PR

@@ -1,0 +1,54 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8C6PD2E0V0BE6EQN1NKW225",
+  "session_id": "01a21867-afb2-7480-9421-659a1cf1d822",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-26T15:13:30.368922Z",
+  "branch": "alex/glo-24-add-sentry-to-bff-apollo-server",
+  "checkpoints_count": 2,
+  "save_step_count": 2,
+  "files_touched": [
+    "docker-compose.yml",
+    "src/bff/README.md",
+    "src/bff/package-lock.json",
+    "src/bff/package.json",
+    "src/bff/src/index.ts",
+    "src/bff/src/sentry.ts",
+    "src/bff/src/server.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "1107a48ddd1c",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 169,
+    "cache_creation_tokens": 47972,
+    "cache_read_tokens": 768395,
+    "output_tokens": 2244,
+    "api_call_count": 19
+  },
+  "session_token_usage": {
+    "input_tokens": 169,
+    "cache_creation_tokens": 47972,
+    "cache_read_tokens": 768395,
+    "output_tokens": 2244,
+    "api_call_count": 19
+  },
+  "redaction": {
+    "replacements": 2,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 2,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 2
+  }
+}
