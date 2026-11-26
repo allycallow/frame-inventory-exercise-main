@@ -47,7 +47,12 @@ async function main() {
       },
     })
     const { url } = await startStandaloneServer(server, {
-      context: async () => ({ correlationId: randomUUID() }),
+      context: async ({ res }) => {
+        const correlationId = randomUUID()
+        res.setHeader('X-Correlation-Id', correlationId)
+        res.setHeader('Access-Control-Expose-Headers', 'X-Correlation-Id')
+        return { correlationId }
+      },
       listen: { port: 4000 },
     })
     logger.info({ url }, 'Frame Inventory GraphQL API available')

@@ -9,6 +9,7 @@ import { Type } from 'protobufjs'
 import type { FrameClient } from '../src/frame-client'
 import type { Frame__Output } from '../src/generated/frameinventory/v1/Frame'
 import type { ListFramesResponse__Output } from '../src/generated/frameinventory/v1/ListFramesResponse'
+import { logger } from '../src/logger'
 import { createMetricsPlugin } from '../src/metrics'
 import { createServer } from '../src/server'
 
@@ -648,3 +649,48 @@ test.each([
     }
   },
 )
+
+test('logs unexpected GraphQL failures with operation and correlation context', async () => {
+  const client = mockClient()
+  const cause = 'private upstream details'
+  client.listFrames.mockImplementation(
+    (_request, _metadata, _options, callback) =>
+      callback(
+        Object.assign(new Error(cause), {
+          code: status.UNKNOWN,
+          details: cause,
+          metadata: new Metadata(),
+        }),
+      ),
+  )
+  const server = createServer(client)
+  const errorLog = jest.spyOn(logger, 'error').mockImplementation(() => {})
+  const correlationId = '069aa868-7443-4787-8b47-e56fbc6077dd'
+
+  try {
+    const response = await server.executeOperation(
+      { query: 'query ListInventory { frames { page } }' },
+      { contextValue: { correlationId } },
+    )
+
+    expect(response.body).toMatchObject({
+      kind: 'single',
+      singleResult: {
+        errors: [{ extensions: { code: 'INTERNAL_SERVER_ERROR' } }],
+      },
+    })
+    expect(errorLog).toHaveBeenCalledWith(
+      {
+        correlationId,
+        operationName: 'ListInventory',
+        code: 'INTERNAL_SERVER_ERROR',
+        durationMs: expect.any(Number),
+      },
+      'GraphQL operation failed',
+    )
+    expect(JSON.stringify(errorLog.mock.calls)).not.toContain(cause)
+  } finally {
+    errorLog.mockRestore()
+    await server.stop()
+  }
+})

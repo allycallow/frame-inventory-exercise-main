@@ -129,7 +129,12 @@ Apollo responds with HTTP 200.
 
 Run `docker compose up -d --build bff grafana`. Alloy reads the backend and
 BFF containers’ stdout and stderr through the Docker socket and sends them
-to Loki. Loki stores logs in the `loki-data` volume.
+to Loki. Loki stores logs in the `loki-data` volume with seven-day retention.
+For a failed GraphQL request, take the `X-Correlation-Id` response header
+and search both services with
+`{service_name=~"backend|bff"} | json | correlationId="your-id"`.
+For a production deployment, configure log storage, retention, and access
+controls for that environment.
 
 Open [Grafana Explore](http://127.0.0.1:3001/explore), select **Loki**,
 and switch to **Code** mode to run either LogQL query.
