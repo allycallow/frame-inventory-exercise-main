@@ -1,0 +1,58 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8CK2NKNNRPWY8ENVHY4KMPZ",
+  "session_id": "01a21892-b48b-7e40-8f58-222ecc9cd896",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-26T18:49:55.879365Z",
+  "branch": "alex/glo-38-remove-opensearch-from-docker-compose",
+  "checkpoints_count": 4,
+  "save_step_count": 83,
+  "files_touched": [
+    "README.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "4cf322673eee",
+  "checkpoint_transcript_start": 3985,
+  "transcript_lines_at_start": 3985,
+  "compact_transcript_start": 806,
+  "token_usage": {
+    "input_tokens": 39,
+    "cache_creation_tokens": 2417,
+    "cache_read_tokens": 5111772,
+    "output_tokens": 1365,
+    "api_call_count": 13
+  },
+  "session_token_usage": {
+    "input_tokens": 14830,
+    "cache_creation_tokens": 394334,
+    "cache_read_tokens": 130794774,
+    "output_tokens": 151628,
+    "api_call_count": 602,
+    "subagent_tokens": {
+      "input_tokens": 570559,
+      "cache_creation_tokens": 0,
+      "cache_read_tokens": 6929337,
+      "output_tokens": 36658,
+      "api_call_count": 163
+    },
+    "subagent_tokens_complete": true
+  },
+  "redaction": {
+    "replacements": 122,
+    "layers": {
+      "betterleaks": 1,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 84,
+      "credentialed_uri": 0,
+      "entropy": 37,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 88
+  }
+}
