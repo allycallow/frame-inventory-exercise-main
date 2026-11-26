@@ -3,6 +3,8 @@ package com.global.ct.frameinventory.frame;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -16,9 +18,15 @@ class FrameService {
     private static final Logger LOGGER = LoggerFactory.getLogger(FrameService.class);
 
     private final FrameRepository frames;
+    private final Counter framesCreated;
+    private final Counter framesUpdated;
+    private final Counter framesSoftDeleted;
 
-    FrameService(FrameRepository frames) {
+    FrameService(FrameRepository frames, MeterRegistry registry) {
         this.frames = frames;
+        this.framesCreated = lifecycleCounter(registry, "created");
+        this.framesUpdated = lifecycleCounter(registry, "updated");
+        this.framesSoftDeleted = lifecycleCounter(registry, "soft_deleted");
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -52,10 +60,13 @@ class FrameService {
         }
         long versionId = frames.append(frameId, attributes, null, null, "MANUAL_CREATE");
         FrameVersion created = frames.findVersion(versionId);
-        afterCommit(() -> LOGGER.atInfo()
-            .addKeyValue("frameId", frameId)
-            .addKeyValue("versionId", versionId)
-            .log("frame.created"));
+        afterCommit(() -> {
+            framesCreated.increment();
+            LOGGER.atInfo()
+                .addKeyValue("frameId", frameId)
+                .addKeyValue("versionId", versionId)
+                .log("frame.created");
+        });
         return created;
     }
 
@@ -66,11 +77,14 @@ class FrameService {
         long versionId = frames.append(frameId, attributes, current, transition, "MANUAL_EDIT");
         frames.copyVersionChildren(current, versionId);
         FrameVersion updated = frames.findVersion(versionId);
-        afterCommit(() -> LOGGER.atInfo()
-            .addKeyValue("frameId", frameId)
-            .addKeyValue("previousVersionId", current)
-            .addKeyValue("newVersionId", versionId)
-            .log("frame.updated"));
+        afterCommit(() -> {
+            framesUpdated.increment();
+            LOGGER.atInfo()
+                .addKeyValue("frameId", frameId)
+                .addKeyValue("previousVersionId", current)
+                .addKeyValue("newVersionId", versionId)
+                .log("frame.updated");
+        });
         return updated;
     }
 
@@ -79,10 +93,13 @@ class FrameService {
         Long current = lockAndCheckVersion(frameId, expectedVersionId);
         if (current != null) {
             frames.close(current, "MANUAL_DELETE");
-            afterCommit(() -> LOGGER.atInfo()
-                .addKeyValue("frameId", frameId)
-                .addKeyValue("closedVersionId", current)
-                .log("frame.soft_deleted"));
+            afterCommit(() -> {
+                framesSoftDeleted.increment();
+                LOGGER.atInfo()
+                    .addKeyValue("frameId", frameId)
+                    .addKeyValue("closedVersionId", current)
+                    .log("frame.soft_deleted");
+            });
         }
     }
 
@@ -102,12 +119,19 @@ class FrameService {
         return current;
     }
 
-    private static void afterCommit(Runnable logEvent) {
+    private static Counter lifecycleCounter(MeterRegistry registry, String operation) {
+        return Counter.builder("frame.lifecycle.changes")
+            .description("Committed frame inventory changes")
+            .tag("operation", operation)
+            .register(registry);
+    }
+
+    private static void afterCommit(Runnable action) {
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    logEvent.run();
+                    action.run();
                 }
             });
         }

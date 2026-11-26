@@ -3,9 +3,10 @@ package com.global.ct.frameinventory.frame;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -25,7 +26,12 @@ class FrameServiceTests {
     @Mock FrameRepository repository;
     @Mock FrameAttributes attributes;
     @Mock FrameVersion version;
-    @InjectMocks FrameService service;
+    private FrameService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new FrameService(repository, new SimpleMeterRegistry());
+    }
 
     @Test
     void reservesTheIdBeforeAppendingTheFirstVersion() {
