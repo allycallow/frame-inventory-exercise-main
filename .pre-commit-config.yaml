@@ -1,0 +1,27 @@
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-json
+      - id: check-yaml
+      - id: check-merge-conflict
+        args: [--assume-in-merge]
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: Frontend ESLint
+        entry: npm --prefix src/frontend run lint
+        language: system
+        files: ^src/frontend/
+        pass_filenames: false
+      - id: commitlint
+        name: Commitlint
+        entry: commitlint --edit
+        language: node
+        stages: [commit-msg]
+        additional_dependencies:
+          - '@commitlint/cli@21.2.4'
+          - '@commitlint/config-conventional@21.2.4'

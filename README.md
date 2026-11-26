@@ -62,6 +62,19 @@ If you have `just` installed, run `just` to list the available recipes.
 - From `src/backend`, run `./gradlew test`.
 - From `src/frontend`, run `npm run lint` after installing dependencies.
 
+### Git hooks
+
+Install [pre-commit](https://pre-commit.com/#installation), then run `pre-commit install`
+from the repository root to install both Git hooks. The `pre-commit` hook checks
+YAML, JSON, and merge conflict markers, and runs ESLint when staged changes touch
+`src/frontend/`. Install the frontend dependencies with `npm ci --prefix src/frontend`
+before committing frontend changes.
+
+The `commit-msg` hook uses Commitlint to enforce the Conventional Commits format
+documented in [AGENTS.md](./AGENTS.md). Commitlint requires Node.js 22.12 or newer.
+
+Run `pre-commit run --all-files` to check the whole repository.
+
 ### Smoke test
 
 Once the stack is up, check both entry points.
