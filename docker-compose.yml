@@ -121,12 +121,26 @@ services:
     networks:
       - frame-inventory
 
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.165.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    ports:
+      - "127.0.0.1:9464:9464"
+    volumes:
+      - ./monitoring/otel-collector.yml:/etc/otelcol-contrib/config.yaml:ro
+    depends_on:
+      - backend
+    networks:
+      - frame-inventory
+
   grafana:
     image: grafana/grafana:13.3.2
     ports:
       - "127.0.0.1:3001:3000"
     volumes:
       - ./monitoring/grafana-datasource.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+      - ./monitoring/grafana-dashboard-provider.yml:/etc/grafana/provisioning/dashboards/frame-inventory.yml:ro
+      - ./monitoring/dashboards:/etc/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
     depends_on:
       - prometheus
