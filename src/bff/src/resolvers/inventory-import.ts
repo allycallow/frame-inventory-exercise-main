@@ -33,9 +33,9 @@ function requireJobId(jobId: string) {
 }
 
 function timestamp(value: Timestamp__Output) {
-  return new Date(
-    Number(value.seconds) * 1000 + Math.floor(value.nanos / 1_000_000),
-  ).toISOString()
+  const date = new Date(Number(value.seconds) * 1000).toISOString()
+  const fraction = String(value.nanos).padStart(9, '0')
+  return date.replace('.000Z', `.${fraction}Z`)
 }
 
 function toJob(job: ImportJob__Output): ImportJob {
