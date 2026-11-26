@@ -1,0 +1,13 @@
+can you pick this ticket up https://linear.app/upfrontbeats/issue/GLO-23/bff-apollo-server-opentelemetry-prometheus-metrics-setup
+
+---
+
+can add the name of the query and the mutation to the metrics
+
+---
+
+so I can see slow queries and mutations in the dashboard
+
+---
+
+nice merged #10 can you open new PR
