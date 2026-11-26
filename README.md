@@ -4,7 +4,7 @@ Application for the frame-inventory take-home exercise.
 
 ## System Overview
 
-Next.js serves the inventory and import workspace. It sends GraphQL requests through a same-origin route to the BFF, which calls Spring Boot over gRPC. Docker Compose runs both modules alongside PostgreSQL, OpenSearch, OpenSearch Dashboards, Prometheus, Grafana, Loki, Alloy, and the OpenTelemetry Collector. The exercise provides a legacy export in `data/inventory_frame.csv` and describes the inventory features in `INSTRUCTIONS.md`.
+Next.js serves the inventory and import workspace. It sends GraphQL requests through a same-origin route to the BFF, which calls Spring Boot over gRPC. Docker Compose runs these services alongside PostgreSQL, Prometheus, Grafana, Loki, Alloy, and the OpenTelemetry Collector. The exercise provides a legacy export in `data/inventory_frame.csv` and describes the inventory features in `INSTRUCTIONS.md`.
 
 Bring the whole stack up with one command.
 
@@ -38,8 +38,6 @@ If you have `just` installed, run `just` to list the available recipes.
 | bff                   | 4000      | 4000           | Apollo Sandbox and the frame inventory GraphQL API     |
 | backend               | 8080      | 8080           | Spring Boot, exposes `GET /api/health`                 |
 | postgres              | 5432      | 5432           | Spring Boot applies the inventory schema via Flyway    |
-| opensearch            | 9200, 9600 | 9200, 9600    | Single-node, security plugin disabled for local use    |
-| opensearch-dashboards | 5601      | 5601           | UI for the OpenSearch cluster above                    |
 | prometheus            | 9091      | 9090           | Scrapes Spring Boot and Apollo metrics every 15 seconds |
 | otel-collector        | 9464      | 9464           | Scrapes Spring Boot metrics for local inspection       |
 | grafana               | 3001      | 3000           | Queries provisioned Prometheus and Loki data            |
@@ -49,7 +47,6 @@ If you have `just` installed, run `just` to list the available recipes.
 | Service               | User       | Password       | Database         |
 |-----------------------|------------|----------------|------------------|
 | postgres              | `app`      | `app`          | `frames`         |
-| opensearch            | n/a        | n/a            | n/a              |
 | grafana               | `admin`    | `admin`         | n/a              |
 
 ## Global Invariants
@@ -60,7 +57,7 @@ If you have `just` installed, run `just` to list the available recipes.
 ## Global Side Effects
 
 - Opening the frontend loads the first page of frames. Starting an import uploads the file directly to S3 using the signed URL returned by the BFF.
-- Docker Compose publishes service ports and creates named volumes for PostgreSQL and OpenSearch. OpenSearch Dashboards connects to OpenSearch on the Compose network. `[docker-compose.yml:services]` `[docker-compose.yml:volumes]` `[docker-compose.yml:services.opensearch-dashboards.environment.OPENSEARCH_HOSTS]`
+- Docker Compose publishes service ports and creates named volumes for PostgreSQL, Prometheus, Grafana, Loki, and Alloy. `[docker-compose.yml:services]` `[docker-compose.yml:volumes]`
 
 ## System Verification
 
