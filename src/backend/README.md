@@ -64,7 +64,7 @@ and again after restarting the backend with the DSN unset.
 
 ### Local import operator
 
-The import RPC service should attach `LocalImportIdentity` as a service-scoped
+The import RPC service attaches `LocalImportIdentity` as a service-scoped
 interceptor. Existing frame RPCs do not use it. Enable Spring's `local-import`
 profile only for host-local development and set `INVENTORY_IMPORT_LOCAL_TOKEN`
 to a randomly generated 64-character lowercase hex value. Keep the credential
@@ -76,8 +76,42 @@ The import BFF must run on the same host, accept the credential only for import
 operations, and forward it alongside the existing correlation metadata. Do not
 derive operator identity from a browser-supplied ID or treat ordinary frame RPC
 authentication as an import credential. The single local operator can create
-DELTA jobs and request force overwrite. Apply the snapshot feature gate and
-scope validation separately before allowing FULL_SNAPSHOT. Persist the verified
+DELTA jobs and request force overwrite. The service rejects FULL_SNAPSHOT until the snapshot safety checks ship. Persist the verified
 operator as job owner and check ownership before returning status or row
 diagnostics. Production imports remain disabled until an operator identity
 provider and permission policy are configured.
+
+
+### Local import RPCs
+
+Start PostgreSQL and the `aws` Compose service. Run Spring Boot on the host
+with the `local-import` profile and configure these additional variables:
+
+| Variable | Local value |
+| --- | --- |
+| `INVENTORY_IMPORT_BUCKET` | `frame-inventory-import-local` |
+| `INVENTORY_IMPORT_REGION` | `us-east-1` |
+| `INVENTORY_IMPORT_SIGNING_ENDPOINT` | `http://127.0.0.1:4566` |
+| `AWS_ACCESS_KEY_ID` | `test` |
+| `AWS_SECRET_ACCESS_KEY` | `test` |
+
+`InventoryImport.CreateImportJob` creates a DELTA job and returns a PUT URL
+valid for 15 minutes. Send every returned header unchanged, including
+`If-None-Match: *` and the CSV content type. The caller can read the durable
+summary with `GetImportJob` and the diagnostics with `ListImportRowErrors`.
+Diagnostics are ordered by data row number and error code. Pages are zero-based
+and default to 25 items.
+
+`AWAITING_UPLOAD` becomes `PENDING` when dispatch binds the first accepted
+object version. Dispatch must validate the event and pass the upload time and
+the decoded key to the repository. A timely upload may arrive for another
+15 minutes after URL expiry. The job becomes `EXPIRED` if it still has no
+object at the dispatch deadline. Subsequent dispatch and worker work will move
+`PENDING` to `RUNNING` and then to a terminal result. An unrecoverable dispatch
+failure can move `PENDING` directly to `FAILED`. Re-delivery of the bound
+version preserves its identity and status. A different version is rejected.
+
+Final job summaries and the frame-version reference are durable. Row
+diagnostics expire seven days after job completion and are purged by hourly
+maintenance while the import profile is running. Worker counts and row errors
+are populated by the staging and apply tasks.
