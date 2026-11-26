@@ -29,7 +29,7 @@ migrations during the integration tests.
 
 The [Protobuf definition](src/main/proto/frameinventory/v1/frames.proto) declares
 the six RPCs. Run `./gradlew generateProto` to generate the Java messages and
-stubs. The [API contract](../../concepts_brief.md#grpc-contract) describes
+stubs. The [API contract](../../docs/frame-management-grpc-api.md#grpc-contract) describes
 pagination, request fields, errors, and version checks.
 
 With the backend running, call the service from `src/backend` using `grpcurl`.
