@@ -1,0 +1,9 @@
+Can you add just commands for the docker-compose and migrations
+
+---
+
+can you apply migrations automatically when docker compose starts
+
+---
+
+can you create PR
