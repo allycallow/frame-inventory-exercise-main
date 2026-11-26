@@ -1,0 +1,351 @@
+$egm:egm-brainstorm Design and plan the implementation of the bulk CSV upload feature (`inventory_frame.csv`) for our Out-of-Home (OOH) advertising inventory system.
+
+### Ingestion & Orchestration Flow
+1. **Presigned S3 Upload:** Client requests a presigned S3 upload URL via our BFF/Spring Boot service, which pre-creates an `import_jobs` record (`AWAITING_UPLOAD`) with `{jobId}` embedded in the S3 key (`uploads/{jobId}/inventory_frame.csv`).
+2. **S3 -> Lambda -> SQS:** When the file is uploaded to S3, an S3-triggered AWS Lambda pushes the upload event to an SQS queue.
+3. **Spring Boot SQS Consumer & DLQ:** Spring Boot polls the SQS queue, updates the job status to `PENDING`, and starts an idempotent Temporal workflow (`csv-import-{jobId}`). Failed messages retry with backoff and route to an SQS Dead Letter Queue (DLQ), where a DLQ listener marks the `import_jobs` record as `FAILED`.
+4. **Temporal Worker & Staging Table Import:** The Temporal worker streams the CSV from S3 in batches with heartbeats into an `UNLOGGED` PostgreSQL staging table (`stg_inventory_import`), validates rows (routing invalid rows to `import_row_errors`), and executes set-based `MERGE ... RETURNING` statements into our 6 normalized 3NF tables (`postcodes`, `sites`, `frame_specs`, `frames`, `frame_broadsign_mappings`, `frame_links`), `frame_history`, and `outbox_events`.
+
+---
+
+We should use optimistic concurrency (`modified_date` + content hash) for conflicts and an explicit import mode (`DELTA` vs `FULL_SNAPSHOT`) for absent frames:
+
+1. **Conflicting CSV values (`modified_date` check):**
+   - **CSV `modified_date` > DB current `modified_date`:** Close the current active version (`is_current = FALSE`, `valid_to = src.modified_date`) and insert a new version row (`version_number + 1`).
+   - **CSV `modified_date` == DB current `modified_date` (unchanged payload):** No-op so retries/re-uploads are idempotent.
+   - **CSV `modified_date` < DB current `modified_date` (Stale Conflict):** Keep the newer DB edit, log the row in `import_row_errors` (`STALE_RECORD`), and finish the job as `COMPLETED_WITH_ERRORS` (unless `forceOverwrite = true` is explicitly passed).
+
+2. **Frames absent from the CSV (`import_mode` on `import_jobs`):**
+   - **`DELTA` (Default):** Leave absent frames untouched.
+   - **`FULL_SNAPSHOT`:** Soft-retire absent active frames by inserting a new version row with `status = 'RETIRED'` and `status_reason = 'MISSING_FROM_FULL_SNAPSHOT'` (with a safety circuit breaker that aborts the job if >10% of active inventory would be retired at once).
+
+---
+
+1. **Equal `modified_date` with Different Content Hash:**
+   - Treat `CSV modified_date == DB modified_date` with a **different payload hash** as a **conflict** (not a silent overwrite or no-op), since two different edits share the exact same timestamp.
+   - Skip the row, log it in `import_row_errors` with reason `TIMESTAMP_COLLISION_CONFLICT` (recording both hashes), and let `forceOverwrite = true` act as the explicit override. Only identical `modified_date` + identical hash is a no-op.
+
+2. **Authoritative Scope of a `FULL_SNAPSHOT`:**
+   - Scope `FULL_SNAPSHOT` explicitly—never implicitly across the entire global inventory unless specified. Store a `snapshot_scope` on `import_jobs` (e.g., `GLOBAL`, or partitioned by `country_code` / `region` / `environment`, such as `{ "country_code": "UK", "environment": "UNDERGROUND" }`), validated against the rows in the file.
+   - The retirement check and >10% circuit breaker compare `stg_inventory_import` strictly against currently active frames matching that exact `snapshot_scope`.
+
+3. **How Malformed Rows Affect Retirement Within That Scope:**
+   - **Never retire a `frame_id` that appeared in the CSV as a malformed row.** Even if a row fails validation (e.g., invalid price or bad postcode) and lands in `import_row_errors`, its `frame_id` was still present in the file—so exclude **all `frame_id`s seen in the staging file (valid + invalid)** from the retirement set so a data typo doesn't accidentally retire a live frame.
+   - Additionally, if malformed rows exceed a threshold (e.g., >5% of rows in a `FULL_SNAPSHOT` fail parsing/validation), abort the retirement step (or fail the snapshot) so a corrupted file cannot misrepresent the scope.
+
+---
+
+Decouple **version validity time** (`valid_from` / `valid_to`) from the **source timestamp** (`source_modified_date` from the CSV):
+
+1. **Monotonic Version Interval (`valid_from` / `valid_to`):**
+   - On a forced overwrite (`forceOverwrite = true`), close the current active version with `valid_to = statement_timestamp()` (`is_current = FALSE`) and open the new version with `valid_from = statement_timestamp()`, `valid_to = NULL`, `is_current = TRUE`, and `version_number = current.version_number + 1`.
+   - Using database transaction time (`statement_timestamp()`) guarantees `[valid_from, valid_to)` intervals are always strictly forward-moving and positive-length, even when the CSV's `modified_date` is older than or equal to the current version.
+
+2. **Preserve CSV Timestamp & Lineage:**
+   - Store the CSV's original `modified_date` untouched in `source_modified_date` on the new version row, and record `change_reason = 'FORCED_OVERWRITE'` (with the `import_job_id`) so audit history clearly distinguishes an out-of-order forced correction from a normal chronological update.
+
+---
+
+review this hypothesis with the Goldfish reviewers
+
+---
+
+Anchor every `FULL_SNAPSHOT` to an explicit export watermark (`snapshot_as_of` on `import_jobs`, provided at upload creation or derived from `MAX(modified_date)` in the file) and enforce both job-level and frame-level currency guards:
+
+1. **Job-Level Watermark & Staleness Guard:**
+   - Reject a `FULL_SNAPSHOT` before writing if `snapshot_as_of` is older than a max freshness TTL (e.g., 24 hours) or earlier than the last completed `FULL_SNAPSHOT` watermark for that `snapshot_scope`.
+
+2. **Per-Frame Retirement Eligibility (`valid_from <= snapshot_as_of`):**
+   - When computing absent active frames in scope, exclude any frame whose current version entered the scope *after* `snapshot_as_of` (`cur.valid_from > job.snapshot_as_of` or `cur.source_modified_date > job.snapshot_as_of`).
+   - Frames created or moved into the scope after the export was generated are left active (and surfaced as `SKIPPED_RETIREMENT_NEWER_THAN_SNAPSHOT` in job diagnostics) rather than falsely retired.
+
+*(Also for manual edits: manual UI/API edits should always set `source_modified_date = statement_timestamp()` rather than inheriting the previous CSV timestamp, ensuring manual edits are never misclassified as equal-timestamp collisions against older CSVs.)*
+
+---
+
+Model `snapshot_scope` as a containment hierarchy (`GLOBAL` ⊃ `country_code` ⊃ `region` ⊃ `environment`) and evaluate watermarks across **overlapping enclosing/child scopes** with asymmetric rules:
+
+1. **Incoming Partition Snapshot vs. Newer Enclosing Scope (e.g., `GLOBAL`):**
+   - A narrower snapshot's effective watermark floor is `MAX(snapshot_as_of)` across its own scope **and all enclosing ancestor scopes** (such as `GLOBAL`).
+   - If `GLOBAL` already completed a snapshot at `12:00`, reject a narrower `UK / UNDERGROUND` snapshot exported at `11:00` before writing, because `GLOBAL` already captured a newer authoritative state for that partition.
+   - Completing a partition snapshot advances only its own scope's watermark (never `GLOBAL`).
+
+2. **Incoming `GLOBAL` (or Broader) Snapshot vs. Newer Child Partition Snapshot:**
+   - Do **not** reject the entire `GLOBAL` snapshot if one sub-partition (`UK / UNDERGROUND`) already has a newer watermark (`12:00` vs. `GLOBAL`'s `11:30`).
+   - Instead, apply normal per-row `modified_date` conflict checks across the whole file, and **carve out (skip retirement for) any child scope whose watermark is newer than the incoming `GLOBAL` `snapshot_as_of`**, while retiring absent frames in all remaining partitions whose watermarks are `<= 11:30`.
+
+---
+
+what do you suggest?
+
+---
+
+Lets go for that
+
+---
+
+let me check it
+
+---
+
+Looks good
+
+---
+
+1.
+
+---
+
+give me full command  egm-draf
+
+---
+
+$egm:egm-draft docs/designs/bulk-csv-inventory-import.md
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+I want to be able to Send S3 notifications directly to SQS no need for lambda
+
+---
+
+yes please
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+2.
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+2.
+
+---
+
+2.
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+can you remove any ref of outbox pattern we not implementing this at the minute
+
+---
+
+yes
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+$egm:egm-review docs/designs/bulk-csv-inventory-import-design.md
+
+---
+
+yes
+
+---
+
+which ones do you think
+
+---
+
+nice lets go for that
+
+---
+
+1.
+
+---
+
+yes
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+1.
+
+---
+
+nice can we write a epic in linear and break up in sub taks
+
+---
+
+are we ready to pick this work up
+
+---
+
+lets go
+
+---
+
+local-only test identit
+
+---
+
+nice ready to open a pr
+
+---
+
+nice open pr
+
+---
+
+nice lets what next to pick up
+
+---
+
+nice lets pick GLO-27
+
+---
+
+merged #15
+
+---
+
+nice open PR
+
+---
+
+can they just be temporal and aws for docker-compose names
+
+---
+
+looks good
+
+---
+
+nice lets do that
+
+---
+
+just use ufb-alex for now
+
+---
+
+merged #17
+
+---
+
+nice lets go
+
+---
+
+nice Open Pr
+
+---
+
+nice looks good
+
+---
+
+merged #18
+
+---
+
+nice lets that to
+
+---
+
+nice lets open PR
+
+---
+
+looks good #19
+
+---
+
+lets start
+
+---
+
+nice lets create a PR
