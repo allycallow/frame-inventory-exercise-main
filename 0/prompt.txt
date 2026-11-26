@@ -1,0 +1,9 @@
+can you setup github action for backend to run tests both unit and integration tests
+
+---
+
+can you create a ticket for this work in Global linear board
+
+---
+
+Open PR for me
