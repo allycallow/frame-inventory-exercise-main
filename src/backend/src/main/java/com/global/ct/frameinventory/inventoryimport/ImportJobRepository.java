@@ -65,7 +65,7 @@ class ImportJobRepository {
                 SET status = 'PENDING', object_version_id = :version
                 WHERE job_id = :id AND object_bucket = :bucket AND object_key = :key
                   AND status = 'AWAITING_UPLOAD' AND dispatch_until > clock_timestamp()
-                  AND :uploadedAt >= created_at - interval '1 second' AND :uploadedAt <= upload_expires_at
+                  AND :uploadedAt >= created_at - interval '1 second' AND :uploadedAt <= dispatch_until
                 """).param("id", id).param("bucket", bucket).param("key", key)
             .param("version", version).param("uploadedAt", uploadedAt.atOffset(ZoneOffset.UTC)).update();
         return updated == 1 || jdbc.sql("""
