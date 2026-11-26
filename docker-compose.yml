@@ -44,6 +44,8 @@ services:
     environment:
       FRAME_GRPC_ENDPOINT: ${FRAME_GRPC_ENDPOINT:-backend:9090}
       OTEL_EXPORTER_PROMETHEUS_HOST: 0.0.0.0
+      SENTRY_DSN: ${BFF_SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-local}
     depends_on:
       - backend
     networks:
