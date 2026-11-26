@@ -84,7 +84,7 @@ test('creates a job and forwards the bearer, correlation, and signed PUT headers
           job: {
             jobId,
             status: 'AWAITING_UPLOAD',
-            createdAt: '2023-11-14T22:13:20.000Z',
+            createdAt: '2023-11-14T22:13:20.000000000Z',
           },
           uploadUrl: 'https://example.test/upload',
           uploadHeaders: [{ name: 'if-none-match', value: '*' }],
@@ -105,7 +105,11 @@ test('reads job status and passes paging arguments to the row-error RPC', async 
       expect(metadata.get('authorization')).toEqual([
         contextValue.importAuthorization,
       ])
-      callback(null, job)
+      callback(null, {
+        ...job,
+        uploadExpiresAt: { seconds: '1700000900', nanos: 123_456_789 },
+        finishedAt: { seconds: '1700000000', nanos: 1 },
+      })
     },
   )
   imports.listImportRowErrors.mockImplementation(
@@ -133,7 +137,7 @@ test('reads job status and passes paging arguments to the row-error RPC', async 
   const result = await server.executeOperation(
     {
       query:
-        'query ($id: ID!) { importJob(jobId: $id) { mode } importRowErrors(jobId: $id, page: 1, size: 2) { page items { rowNumber code frameId } hasNext } }',
+        'query ($id: ID!) { importJob(jobId: $id) { mode uploadExpiresAt finishedAt } importRowErrors(jobId: $id, page: 1, size: 2) { page items { rowNumber code frameId } hasNext } }',
       variables: { id: jobId },
     },
     { contextValue },
@@ -142,7 +146,11 @@ test('reads job status and passes paging arguments to the row-error RPC', async 
     kind: 'single',
     singleResult: {
       data: {
-        importJob: { mode: 'DELTA' },
+        importJob: {
+          mode: 'DELTA',
+          uploadExpiresAt: '2023-11-14T22:28:20.123456789Z',
+          finishedAt: '2023-11-14T22:13:20.000000001Z',
+        },
         importRowErrors: {
           page: 1,
           items: [{ rowNumber: 7, code: 'INVALID_FIELD', frameId: 'F-1' }],
