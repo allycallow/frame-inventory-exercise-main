@@ -173,3 +173,8 @@ cd src/frontend
 npm install
 npm run dev
 ```
+
+## Inventory import development services
+
+See [inventory import infrastructure](infra/inventory-import/README.md) for the
+opt-in S3/SQS emulator and Temporal profile, Terraform, and smoke test.
