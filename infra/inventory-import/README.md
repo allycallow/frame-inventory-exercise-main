@@ -11,13 +11,13 @@ backend will use the bucket name and both queue URLs as import configuration.
 From the repository root:
 
 ```sh
-docker compose --profile import up -d --wait import-aws import-temporal
+docker compose --profile import up -d --wait aws temporal
 ```
 
 The profile pins the LocalStack community image from before token activation
 became mandatory. It exposes S3/SQS on `127.0.0.1:4566` and Temporal on
 `127.0.0.1:7233` with UI on port 8233. Containers on the Compose network can
-reach `import-aws:4566` and `import-temporal:7233`. Use the loopback S3 endpoint
+reach `aws:4566` and `temporal:7233`. Use the loopback S3 endpoint
 with path-style addressing when signing URLs for a host browser. The ready hook
 creates the bucket, queues and notification. The smoke test is intended to run
 before starting a queue consumer.

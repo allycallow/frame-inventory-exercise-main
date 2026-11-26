@@ -67,7 +67,7 @@ services:
     networks:
       - frame-inventory
 
-  import-aws:
+  aws:
     image: localstack/localstack:4.12.0
     profiles: [import]
     ports:
@@ -87,7 +87,7 @@ services:
     networks:
       - frame-inventory
 
-  import-temporal:
+  temporal:
     image: temporalio/temporal:1.5.1
     profiles: [import]
     command: ["server", "start-dev", "--ip", "0.0.0.0"]
