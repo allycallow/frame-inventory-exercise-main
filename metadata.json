@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8CCZRB2JHGMYFXDHQENER74",
+  "strategy": "manual-commit",
+  "branch": "alex/glo-28-define-and-implement-import-authorization",
+  "checkpoints_count": 57,
+  "files_touched": [
+    "src/backend/README.md",
+    "src/backend/src/main/java/com/global/ct/frameinventory/inventoryimport/LocalImportIdentity.java",
+    "src/backend/src/main/resources/application-local-import.yml",
+    "src/backend/src/test/java/com/global/ct/frameinventory/inventoryimport/LocalImportIdentityTests.java"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 13591,
+    "cache_creation_tokens": 158714,
+    "cache_read_tokens": 18703605,
+    "output_tokens": 38581,
+    "api_call_count": 189,
+    "subagent_tokens": {
+      "input_tokens": 570559,
+      "cache_creation_tokens": 0,
+      "cache_read_tokens": 6929337,
+      "output_tokens": 36658,
+      "api_call_count": 163
+    },
+    "subagent_tokens_complete": true
+  },
+  "redaction": {
+    "replacements": 12,
+    "layers": {
+      "betterleaks": 1,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 11,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  }
+}
