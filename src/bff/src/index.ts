@@ -7,6 +7,7 @@ import { MeterProvider } from '@opentelemetry/sdk-metrics'
 import { randomUUID } from 'node:crypto'
 import { resolve } from 'node:path'
 import type { ProtoGrpcType } from './generated/frames'
+import { connectInventoryImport } from './inventory-import-client'
 import { logger } from './logger'
 import { createMetricsPlugin } from './metrics'
 import { createServer } from './server'
@@ -19,6 +20,10 @@ async function main() {
     process.env.FRAME_GRPC_ENDPOINT ??
     process.env.FRAME_GRPC_TARGET ??
     'localhost:9090'
+  const importEndpoint = process.env.IMPORT_GRPC_ENDPOINT
+  const imports = importEndpoint
+    ? connectInventoryImport(importEndpoint)
+    : undefined
   const client = new proto.frameinventory.v1.FrameManagement(
     endpoint,
     credentials.createInsecure(),
@@ -32,7 +37,7 @@ async function main() {
   const meterProvider = new MeterProvider({ readers: [exporter] })
 
   try {
-    const server = createServer(client)
+    const server = createServer(client, imports)
     server.addPlugin(
       createMetricsPlugin(meterProvider.getMeter('frame-inventory-bff')),
     )
@@ -47,17 +52,21 @@ async function main() {
       },
     })
     const { url } = await startStandaloneServer(server, {
-      context: async ({ res }) => {
+      context: async ({ req, res }) => {
         const correlationId = randomUUID()
         res.setHeader('X-Correlation-Id', correlationId)
         res.setHeader('Access-Control-Expose-Headers', 'X-Correlation-Id')
-        return { correlationId }
+        return {
+          correlationId,
+          importAuthorization: imports ? req.headers.authorization : undefined,
+        }
       },
-      listen: { port: 4000 },
+      listen: { port: 4000, ...(imports ? { host: '127.0.0.1' } : {}) },
     })
     logger.info({ url }, 'Frame Inventory GraphQL API available')
   } catch (error) {
     client.close()
+    imports?.close()
     await meterProvider.shutdown()
     throw error
   }

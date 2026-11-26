@@ -1,0 +1,202 @@
+import {
+  Metadata,
+  status,
+  type CallOptions,
+  type requestCallback,
+  type ServiceError,
+} from '@grpc/grpc-js'
+import { ConstantBackoff, handleWhen, retry } from 'cockatiel'
+import { GraphQLError } from 'graphql'
+import { randomUUID } from 'node:crypto'
+import { Type } from 'protobufjs'
+import { GRAPHQL_ERROR_CODES } from './consts'
+import { logger } from './logger'
+
+export type UnaryRpc<Request, Response> = (
+  request: Request,
+  metadata: Metadata,
+  options: CallOptions,
+  callback: requestCallback<Response>,
+) => void
+
+const TIMEOUT_MS = 5_000
+const readRetry = retry(
+  handleWhen(
+    (error) => isGrpcError(error) && error.code === status.UNAVAILABLE,
+  ),
+  { maxAttempts: 2, backoff: new ConstantBackoff(100) },
+)
+
+const clientErrorCodes = new Map([
+  [status.INVALID_ARGUMENT, GRAPHQL_ERROR_CODES.BAD_USER_INPUT],
+  [status.NOT_FOUND, GRAPHQL_ERROR_CODES.NOT_FOUND],
+  [status.ALREADY_EXISTS, GRAPHQL_ERROR_CODES.ALREADY_EXISTS],
+  [status.ABORTED, GRAPHQL_ERROR_CODES.CONFLICT],
+  [status.UNAUTHENTICATED, GRAPHQL_ERROR_CODES.UNAUTHENTICATED],
+  [status.PERMISSION_DENIED, GRAPHQL_ERROR_CODES.FORBIDDEN],
+  [status.FAILED_PRECONDITION, GRAPHQL_ERROR_CODES.FAILED_PRECONDITION],
+])
+
+const statusDetailsType = Type.fromJSON('Status', {
+  fields: {
+    details: { rule: 'repeated', type: 'Any', id: 3 },
+  },
+  nested: {
+    Any: {
+      fields: {
+        typeUrl: { type: 'string', id: 1 },
+        value: { type: 'bytes', id: 2 },
+      },
+    },
+  },
+})
+const badRequestType = Type.fromJSON('BadRequest', {
+  fields: {
+    fieldViolations: { rule: 'repeated', type: 'FieldViolation', id: 1 },
+  },
+  nested: {
+    FieldViolation: {
+      fields: {
+        field: { type: 'string', id: 1 },
+        description: { type: 'string', id: 2 },
+      },
+    },
+  },
+})
+
+function fieldViolations(
+  error: unknown,
+): { field: string; description: string }[] {
+  if (
+    !(error instanceof Error) ||
+    !('metadata' in error) ||
+    !(error.metadata instanceof Metadata)
+  ) {
+    return []
+  }
+  const trailer = error.metadata.get('grpc-status-details-bin')[0]
+  if (!Buffer.isBuffer(trailer)) return []
+
+  try {
+    const decoded = statusDetailsType.decode(trailer) as unknown as {
+      details?: { typeUrl?: string; value?: Uint8Array }[]
+    }
+    return (decoded.details ?? []).flatMap((detail) => {
+      if (
+        !detail.typeUrl?.endsWith('/google.rpc.BadRequest') ||
+        !detail.value
+      ) {
+        return []
+      }
+      try {
+        const badRequest = badRequestType.decode(detail.value) as unknown as {
+          fieldViolations?: { field?: string; description?: string }[]
+        }
+        return (badRequest.fieldViolations ?? []).map((violation) => ({
+          field: violation.field ?? '',
+          description: violation.description ?? '',
+        }))
+      } catch {
+        return []
+      }
+    })
+  } catch {
+    return []
+  }
+}
+
+function isGrpcError(
+  error: unknown,
+): error is Pick<ServiceError, 'code' | 'details'> {
+  return (
+    error instanceof Error &&
+    'code' in error &&
+    typeof error.code === 'number' &&
+    'details' in error &&
+    typeof error.details === 'string'
+  )
+}
+
+export async function callGrpc<Request, Response>(
+  method: string,
+  rpc: UnaryRpc<Request, Response>,
+  request: Request,
+  correlationId: string = randomUUID(),
+  retryUnavailable = false,
+  authorization?: string,
+): Promise<Response> {
+  const metadata = new Metadata()
+  metadata.set('x-correlation-id', correlationId)
+  if (authorization) metadata.set('authorization', authorization)
+  const service = authorization ? 'Import' : 'Frame'
+  const rpcLogger = logger.child({ correlationId })
+  const startedAt = performance.now()
+  const deadline = Date.now() + TIMEOUT_MS
+  const call = () =>
+    new Promise<Response>((resolve, reject) => {
+      rpc(request, metadata, { deadline }, (error, response) => {
+        if (error) {
+          reject(error)
+        } else if (!response) {
+          reject(new Error('gRPC returned no response'))
+        } else {
+          resolve(response)
+        }
+      })
+    })
+
+  try {
+    const response = retryUnavailable
+      ? await readRetry.execute(call, AbortSignal.timeout(TIMEOUT_MS))
+      : await call()
+    rpcLogger.debug(
+      { method, durationMs: performance.now() - startedAt },
+      `${service} RPC completed`,
+    )
+    return response
+  } catch (error) {
+    const durationMs = performance.now() - startedAt
+    const grpcError = isGrpcError(error) ? error : undefined
+
+    if (grpcError) {
+      const code = clientErrorCodes.get(grpcError.code)
+      if (code) {
+        rpcLogger.debug(
+          { method, grpcCode: grpcError.code, durationMs },
+          `${service} RPC rejected`,
+        )
+        const violations =
+          grpcError.code === status.INVALID_ARGUMENT
+            ? fieldViolations(error)
+            : []
+        throw new GraphQLError(grpcError.details, {
+          extensions: {
+            code,
+            ...(violations.length > 0 ? { fieldViolations: violations } : {}),
+          },
+        })
+      }
+
+      if (
+        grpcError.code === status.UNAVAILABLE ||
+        grpcError.code === status.DEADLINE_EXCEEDED
+      ) {
+        rpcLogger.warn(
+          { method, grpcCode: grpcError.code, durationMs },
+          `${service} service is unavailable`,
+        )
+        throw new GraphQLError(`${service} service is unavailable`, {
+          extensions: { code: GRAPHQL_ERROR_CODES.SERVICE_UNAVAILABLE },
+        })
+      }
+    }
+
+    rpcLogger.error(
+      { method, grpcCode: grpcError?.code, durationMs },
+      `${service} RPC failed`,
+    )
+    throw new GraphQLError(`${service} operation failed`, {
+      extensions: { code: GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR },
+    })
+  }
+}

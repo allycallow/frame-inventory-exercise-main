@@ -2,9 +2,15 @@ type Query {
   frames(page: Int, size: Int): FramePage!
   frame(frameId: ID!): Frame
   frameHistory(frameId: ID!): [Frame!]!
+  importJob(jobId: ID!): ImportJob!
+  importRowErrors(jobId: ID!, page: Int, size: Int): ImportRowErrorPage!
 }
 
 type Mutation {
+  createImportJob(
+    mode: ImportMode
+    forceOverwrite: Boolean
+  ): CreateImportJobResult!
   createFrame(frameId: ID!, attributes: FrameAttributesInput!): Frame!
   updateFrame(
     frameId: ID!
