@@ -1,0 +1,59 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8CHJNGFWXKQFMNJC3QK9NRH",
+  "session_id": "01a21892-b48b-7e40-8f58-222ecc9cd896",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-26T18:23:42.104229Z",
+  "branch": "alex/glo-32-stage-validate-and-apply-delta-imports",
+  "checkpoints_count": 3,
+  "save_step_count": 81,
+  "files_touched": [
+    "src/backend/README.md",
+    "src/backend/src/test/java/com/global/ct/frameinventory/frame/FrameGrpcTests.java"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "fe0073af7d72",
+  "checkpoint_transcript_start": 3490,
+  "transcript_lines_at_start": 3490,
+  "compact_transcript_start": 707,
+  "token_usage": {
+    "input_tokens": 156,
+    "cache_creation_tokens": 41185,
+    "cache_read_tokens": 18830727,
+    "output_tokens": 24267,
+    "api_call_count": 52
+  },
+  "session_token_usage": {
+    "input_tokens": 14701,
+    "cache_creation_tokens": 381036,
+    "cache_read_tokens": 114135942,
+    "output_tokens": 146979,
+    "api_call_count": 559,
+    "subagent_tokens": {
+      "input_tokens": 570559,
+      "cache_creation_tokens": 0,
+      "cache_read_tokens": 6929337,
+      "output_tokens": 36658,
+      "api_call_count": 163
+    },
+    "subagent_tokens_complete": true
+  },
+  "redaction": {
+    "replacements": 122,
+    "layers": {
+      "betterleaks": 1,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 84,
+      "credentialed_uri": 0,
+      "entropy": 37,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 81
+  }
+}
