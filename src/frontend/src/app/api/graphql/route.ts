@@ -1,4 +1,11 @@
 export async function POST(request: Request): Promise<Response> {
+  const contentType = request.headers.get('content-type')?.split(';')[0].trim().toLowerCase()
+  if (contentType !== 'application/json') {
+    return Response.json(
+      { errors: [{ message: 'GraphQL requests must use application/json.' }] },
+      { status: 415, headers: { 'cache-control': 'no-store' } },
+    )
+  }
   const headers = new Headers({ 'content-type': 'application/json' })
   const authorization = request.headers.get('authorization')
   if (authorization) headers.set('authorization', authorization)
