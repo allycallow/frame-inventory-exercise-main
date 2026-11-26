@@ -1,4 +1,5 @@
 import {
+  Metadata,
   status,
   type CallOptions,
   type requestCallback,
@@ -6,6 +7,7 @@ import {
 } from '@grpc/grpc-js'
 import { ConstantBackoff, handleWhen, retry } from 'cockatiel'
 import { GraphQLError } from 'graphql'
+import { Type } from 'protobufjs'
 import { GRAPHQL_ERROR_CODES } from './consts'
 import type { CreateFrameRequest } from './generated/frameinventory/v1/CreateFrameRequest'
 import type { DeleteFrameRequest } from './generated/frameinventory/v1/DeleteFrameRequest'
@@ -52,6 +54,74 @@ const clientErrorCodes = new Map([
   [status.ALREADY_EXISTS, GRAPHQL_ERROR_CODES.ALREADY_EXISTS],
   [status.ABORTED, GRAPHQL_ERROR_CODES.CONFLICT],
 ])
+
+const statusDetailsType = Type.fromJSON('Status', {
+  fields: {
+    details: { rule: 'repeated', type: 'Any', id: 3 },
+  },
+  nested: {
+    Any: {
+      fields: {
+        typeUrl: { type: 'string', id: 1 },
+        value: { type: 'bytes', id: 2 },
+      },
+    },
+  },
+})
+const badRequestType = Type.fromJSON('BadRequest', {
+  fields: {
+    fieldViolations: { rule: 'repeated', type: 'FieldViolation', id: 1 },
+  },
+  nested: {
+    FieldViolation: {
+      fields: {
+        field: { type: 'string', id: 1 },
+        description: { type: 'string', id: 2 },
+      },
+    },
+  },
+})
+
+function fieldViolations(
+  error: unknown,
+): { field: string; description: string }[] {
+  if (
+    !(error instanceof Error) ||
+    !('metadata' in error) ||
+    !(error.metadata instanceof Metadata)
+  ) {
+    return []
+  }
+  const trailer = error.metadata.get('grpc-status-details-bin')[0]
+  if (!Buffer.isBuffer(trailer)) return []
+
+  try {
+    const decoded = statusDetailsType.decode(trailer) as unknown as {
+      details?: { typeUrl?: string; value?: Uint8Array }[]
+    }
+    return (decoded.details ?? []).flatMap((detail) => {
+      if (
+        !detail.typeUrl?.endsWith('/google.rpc.BadRequest') ||
+        !detail.value
+      ) {
+        return []
+      }
+      try {
+        const badRequest = badRequestType.decode(detail.value) as unknown as {
+          fieldViolations?: { field?: string; description?: string }[]
+        }
+        return (badRequest.fieldViolations ?? []).map((violation) => ({
+          field: violation.field ?? '',
+          description: violation.description ?? '',
+        }))
+      } catch {
+        return []
+      }
+    })
+  } catch {
+    return []
+  }
+}
 
 function isGrpcError(
   error: unknown,
@@ -102,7 +172,16 @@ export async function callFrameRpc<Request, Response>(
       const code = clientErrorCodes.get(grpcError.code)
       if (code) {
         logger.debug({ method, grpcCode: grpcError.code }, 'Frame RPC rejected')
-        throw new GraphQLError(grpcError.details, { extensions: { code } })
+        const violations =
+          grpcError.code === status.INVALID_ARGUMENT
+            ? fieldViolations(error)
+            : []
+        throw new GraphQLError(grpcError.details, {
+          extensions: {
+            code,
+            ...(violations.length > 0 ? { fieldViolations: violations } : {}),
+          },
+        })
       }
 
       if (

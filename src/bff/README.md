@@ -24,6 +24,11 @@ The query uses the backend's zero-based pagination. Omitted arguments use page
 `0` and size `25`. Sizes from `1` through `50` are valid. An empty inventory
 returns an empty list with `hasNext: false`.
 
+When Spring rejects invalid input, the GraphQL error has code `BAD_USER_INPUT`.
+If the backend supplies validation details, `extensions.fieldViolations`
+contains `{ field, description }` entries using backend property paths.
+Other input errors may not include this extension.
+
 ## Frame lifecycle in Apollo Sandbox
 
 Paste these operations into Sandbox. Run **Create** with variables

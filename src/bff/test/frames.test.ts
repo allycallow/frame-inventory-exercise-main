@@ -1,5 +1,6 @@
 import { Metadata, status } from '@grpc/grpc-js'
 import { expect, jest, test } from '@jest/globals'
+import { Type } from 'protobufjs'
 import type { FrameClient } from '../src/frame-client'
 import type { Frame__Output } from '../src/generated/frameinventory/v1/Frame'
 import type { ListFramesResponse__Output } from '../src/generated/frameinventory/v1/ListFramesResponse'
@@ -16,6 +17,154 @@ function mockClient() {
     close: jest.fn(),
   }
 }
+
+const statusType = Type.fromJSON('Status', {
+  fields: {
+    code: { type: 'int32', id: 1 },
+    message: { type: 'string', id: 2 },
+    details: { rule: 'repeated', type: 'Any', id: 3 },
+  },
+  nested: {
+    Any: {
+      fields: {
+        typeUrl: { type: 'string', id: 1 },
+        value: { type: 'bytes', id: 2 },
+      },
+    },
+  },
+})
+const badRequestType = Type.fromJSON('BadRequest', {
+  fields: {
+    fieldViolations: { rule: 'repeated', type: 'FieldViolation', id: 1 },
+  },
+  nested: {
+    FieldViolation: {
+      fields: {
+        field: { type: 'string', id: 1 },
+        description: { type: 'string', id: 2 },
+      },
+    },
+  },
+})
+
+test('exposes backend field violations from gRPC status details', async () => {
+  const violations = [
+    { field: 'attributes.latitude', description: 'must be at most 90' },
+    { field: 'attributes.pixelWidth', description: 'must be positive' },
+  ]
+  const metadata = new Metadata()
+  metadata.set(
+    'grpc-status-details-bin',
+    Buffer.from(
+      statusType
+        .encode({
+          code: status.INVALID_ARGUMENT,
+          message: 'One or more request values are invalid.',
+          details: [
+            {
+              typeUrl: 'type.googleapis.com/google.rpc.ErrorInfo',
+              value: [0xff],
+            },
+            {
+              typeUrl: 'type.googleapis.com/google.rpc.BadRequest',
+              value: badRequestType
+                .encode({ fieldViolations: violations })
+                .finish(),
+            },
+          ],
+        })
+        .finish(),
+    ),
+  )
+  const client = mockClient()
+  client.createFrame.mockImplementation((_request, _options, callback) =>
+    callback(
+      Object.assign(new Error('invalid'), {
+        code: status.INVALID_ARGUMENT,
+        details: 'One or more request values are invalid.',
+        metadata,
+      }),
+    ),
+  )
+  const server = createServer(client)
+  try {
+    const response = await server.executeOperation({
+      query:
+        'mutation { createFrame(frameId: "frame", attributes: { status: LIVE }) { frameId } }',
+    })
+    expect(response.body).toMatchObject({
+      kind: 'single',
+      singleResult: {
+        errors: [
+          {
+            message: 'One or more request values are invalid.',
+            extensions: { code: 'BAD_USER_INPUT', fieldViolations: violations },
+          },
+        ],
+      },
+    })
+  } finally {
+    await server.stop()
+  }
+})
+
+test.each([
+  { name: 'missing', trailer: undefined },
+  { name: 'malformed status', trailer: Buffer.from([0x1a, 0xff]) },
+  {
+    name: 'unrelated detail',
+    trailer: Buffer.from(
+      statusType
+        .encode({
+          details: [
+            { typeUrl: 'type.googleapis.com/google.rpc.ErrorInfo', value: [] },
+          ],
+        })
+        .finish(),
+    ),
+  },
+  {
+    name: 'malformed BadRequest',
+    trailer: Buffer.from(
+      statusType
+        .encode({
+          details: [
+            {
+              typeUrl: 'type.googleapis.com/google.rpc.BadRequest',
+              value: [0x0a, 0xff],
+            },
+          ],
+        })
+        .finish(),
+    ),
+  },
+])('ignores $name validation trailers', async ({ trailer }) => {
+  const metadata = new Metadata()
+  if (trailer) metadata.set('grpc-status-details-bin', trailer)
+  const client = mockClient()
+  client.createFrame.mockImplementation((_request, _options, callback) =>
+    callback(
+      Object.assign(new Error('invalid'), {
+        code: status.INVALID_ARGUMENT,
+        details: 'invalid input',
+        metadata,
+      }),
+    ),
+  )
+  const server = createServer(client)
+  try {
+    const response = await server.executeOperation({
+      query:
+        'mutation { createFrame(frameId: "frame", attributes: { status: LIVE }) { frameId } }',
+    })
+    if (response.body.kind !== 'single') throw new Error('Unexpected response')
+    expect(response.body.singleResult.errors?.[0].extensions).toEqual({
+      code: 'BAD_USER_INPUT',
+    })
+  } finally {
+    await server.stop()
+  }
+})
 
 test('frames requests the specified gRPC page and returns frames with pagination metadata', async () => {
   const frame = {
