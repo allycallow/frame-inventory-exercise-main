@@ -1,10 +1,10 @@
 # Frame Inventory
 
-Monorepo scaffold for the frame-inventory take-home exercise.
+Application for the frame-inventory take-home exercise.
 
 ## System Overview
 
-The Next.js page calls the Spring Boot health endpoint through a same-origin rewrite. Docker Compose runs both modules alongside PostgreSQL, OpenSearch, OpenSearch Dashboards, Prometheus, Grafana, Loki, Alloy, and the OpenTelemetry Collector. The exercise provides a legacy export in `data/inventory_frame.csv` and describes the inventory features in `INSTRUCTIONS.md`.
+Next.js serves the inventory and import workspace. It sends GraphQL requests through a same-origin route to the BFF, which calls Spring Boot over gRPC. Docker Compose runs both modules alongside PostgreSQL, OpenSearch, OpenSearch Dashboards, Prometheus, Grafana, Loki, Alloy, and the OpenTelemetry Collector. The exercise provides a legacy export in `data/inventory_frame.csv` and describes the inventory features in `INSTRUCTIONS.md`.
 
 Bring the whole stack up with one command.
 
@@ -34,7 +34,7 @@ If you have `just` installed, run `just` to list the available recipes.
 
 | Service               | Host port | Container port | Notes                                                  |
 |-----------------------|-----------|----------------|--------------------------------------------------------|
-| frontend              | 3000      | 3000           | Next.js dev server, proxies `/api` to the backend     |
+| frontend              | 3000      | 3000           | Next.js workspace and same-origin GraphQL route     |
 | bff                   | 4000      | 4000           | Apollo Sandbox and the frame inventory GraphQL API     |
 | backend               | 8080      | 8080           | Spring Boot, exposes `GET /api/health`                 |
 | postgres              | 5432      | 5432           | Spring Boot applies the inventory schema via Flyway    |
@@ -55,11 +55,11 @@ If you have `just` installed, run `just` to list the available recipes.
 ## Global Invariants
 
 - The Next.js rewrite preserves the `/api/` path and uses `BACKEND_URL` as its destination origin. Compose sets it to `http://backend:8080`. `[src/frontend/next.config.ts:rewrites]` `[docker-compose.yml:services.frontend.environment.BACKEND_URL]`
-- The health page expects `status`, `service`, and `timestamp` from `GET /api/health`. The backend supplies those fields directly. `[src/frontend/src/app/page.tsx:HealthResponse]` `[src/backend/src/main/java/com/global/ct/frameinventory/HealthController.java:health]`
+- The Next.js `/api/graphql` route proxies GraphQL to `BFF_URL`. Compose sets it to `http://bff:4000`.
 
 ## Global Side Effects
 
-- Opening the frontend requests `/api/health`, which the Next.js server forwards to the backend. The response reports the current time from the backend clock. `[src/frontend/src/app/page.tsx:Home]` `[src/frontend/next.config.ts:rewrites]` `[src/backend/src/main/java/com/global/ct/frameinventory/HealthController.java:health]`
+- Opening the frontend loads the first page of frames. Starting an import uploads the file directly to S3 using the signed URL returned by the BFF.
 - Docker Compose publishes service ports and creates named volumes for PostgreSQL and OpenSearch. OpenSearch Dashboards connects to OpenSearch on the Compose network. `[docker-compose.yml:services]` `[docker-compose.yml:volumes]` `[docker-compose.yml:services.opensearch-dashboards.environment.OPENSEARCH_HOSTS]`
 
 ## System Verification
@@ -84,7 +84,7 @@ Run `pre-commit run --all-files` to check the whole repository.
 
 Once the stack is up, check the service entry points.
 
-- Open <http://localhost:3000> &mdash; the page calls `/api/health` and prints the JSON response.
+- Open <http://localhost:3000> to view the frame list. See the [frontend setup](./src/frontend/README.md) to enable local imports.
 - Hit the backend directly: <http://localhost:8080/api/health>.
 - Open [Apollo Sandbox](http://127.0.0.1:4000) and run the [frame list query](./src/bff/README.md).
 

@@ -1,6 +1,7 @@
 package com.global.ct.frameinventory.frame;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -427,6 +428,26 @@ class FrameGrpcTests {
         } catch (StatusRuntimeException exception) {
             return exception.getStatus().getCode();
         }
+    }
+
+    @Test
+    void keepsImportLineageInFrameHistoryAfterTheJobDiagnosticsExpire() {
+        var frame = create(FRAME_ID);
+        assertThat(frame.hasImportJobId()).isFalse();
+
+        UUID jobId = UUID.randomUUID();
+        jdbc.sql("""
+                INSERT INTO import_jobs (job_id, owner_id, import_mode, force_overwrite, status,
+                    object_bucket, object_key, object_version_id, upload_expires_at, dispatch_until, finished_at)
+                VALUES (:id, 'local-import-operator', 'DELTA', false, 'COMPLETED',
+                    'test', :key, 'stable-version', now() - interval '8 days',
+                    now() - interval '8 days', now() - interval '8 days')
+                """).param("id", jobId).param("key", "uploads/" + jobId + "/inventory_frame.csv").update();
+        jdbc.sql("UPDATE frame_version SET import_job_id = :job WHERE version_id = :version")
+            .param("job", jobId).param("version", frame.getVersionId()).update();
+
+        assertThat(history(FRAME_ID)).singleElement()
+            .satisfies(version -> assertThat(version.getImportJobId()).isEqualTo(jobId.toString()));
     }
 
     private Frame create(String frameId) {

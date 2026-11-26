@@ -59,11 +59,13 @@ services:
       - "3000:3000"
     environment:
       BACKEND_URL: http://backend:8080
+      BFF_URL: http://bff:4000
     volumes:
       - ./src/frontend/src:/app/src
       - ./src/frontend/public:/app/public
     depends_on:
       - backend
+      - bff
     networks:
       - frame-inventory
 

@@ -79,6 +79,7 @@ message Frame {
   FrameData attributes = 10;
   map<string, string> external_references = 11;
   repeated string linked_frame_ids = 12;
+  optional string import_job_id = 13;
 }
 
 message FrameData {

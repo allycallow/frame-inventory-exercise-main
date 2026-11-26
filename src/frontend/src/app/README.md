@@ -1,26 +1,12 @@
 # App Router
 
-## Overview
+The home route displays a paginated frame list and a DELTA import workspace.
+Selecting a frame ID opens its version history with links to associated import
+jobs.
 
-The root layout wraps the app. The home page displays the outcome of a backend
-health check.
+The same-origin GraphQL route uses the server-side BFF URL. The browser keeps
+the local operator token in memory and supplies it for import operations.
+CSV uploads go directly to the presigned S3 URL. Job status and diagnostics
+continue to use the GraphQL route.
 
-## Interface
-
-- `RootLayout` renders route content within an English-language HTML document. `metadata` sets the page title and favicon. [layout.tsx:RootLayout] [layout.tsx:metadata]
-- `Home` renders `/` and shows a loading message, the returned JSON, or an error message. [page.tsx:Home] [page.tsx:FetchState]
-
-## Invariants
-
-- The frontend types the health response with string fields for `status`, `service`, and `timestamp`. [page.tsx:HealthResponse]
-- An HTTP response outside the 2xx range enters the error state. [page.tsx:Home]
-
-## Side Effects
-
-- `Home` requests `/api/health` on mount and updates the displayed state when the request resolves or fails. [page.tsx:Home]
-- Cleanup aborts the request, and the error handler ignores `AbortError`. [page.tsx:Home]
-
-## Verification
-
-- Run `npm run lint` from `src/frontend`. [../../package.json:scripts.lint]
-- With both services running, open `/` and confirm the page displays the backend health response. [page.tsx:Home]
+See the [frontend setup](../../README.md) for running and verification.

@@ -7,4 +7,4 @@ Router.
 
 ## Subdirectories & Boundaries
 
-- [App Router](./app/README.md) owns the root layout and the frontend page that checks backend health.
+- [App Router](./app/README.md) owns the root layout and the frame inventory and import workspace.

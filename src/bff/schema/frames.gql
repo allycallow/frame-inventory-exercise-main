@@ -13,6 +13,7 @@ type Frame {
   current: Boolean!
   changeSource: String
   closedByChangeSource: String
+  importJobId: ID
   sourceCreatedAt: String
   sourceModifiedAt: String
   attributes: FrameAttributes!

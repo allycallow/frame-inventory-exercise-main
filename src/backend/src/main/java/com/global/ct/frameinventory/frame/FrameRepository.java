@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -300,7 +301,8 @@ class FrameRepository {
         return new FrameVersion(
             rs.getString("frame_id"), rs.getLong("version_id"), instant(rs, "valid_from"),
             instant(rs, "valid_to"), rs.getBoolean("is_current"), rs.getString("change_source"),
-            rs.getString("closed_by_change_source"), rs.getObject("source_created_at", LocalDateTime.class),
+            rs.getString("closed_by_change_source"), rs.getObject("import_job_id", UUID.class),
+            rs.getObject("source_created_at", LocalDateTime.class),
             rs.getObject("source_modified_at", LocalDateTime.class), attributes, mapReferences(rs),
             List.of((String[]) rs.getArray("linked_frame_ids").getArray())
         );

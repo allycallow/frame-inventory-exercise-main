@@ -83,6 +83,9 @@ final class FrameProtoMapper {
         }
         setIfPresent(version.changeSource(), frame::setChangeSource);
         setIfPresent(version.closedByChangeSource(), frame::setClosedByChangeSource);
+        if (version.importJobId() != null) {
+            frame.setImportJobId(version.importJobId().toString());
+        }
         return frame.build();
     }
 
