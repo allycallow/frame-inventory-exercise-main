@@ -311,7 +311,7 @@ class FrameGrpcTests {
     }
 
     @Test
-    void editsImportedFramesWithoutLosingSourceOrVersionOwnedReferences() {
+    void editsImportedFramesWithANewSourceTimeAndRetainsVersionOwnedReferences() {
         jdbc.sql("INSERT INTO frame (frame_id) VALUES ('IMPORTED')").update();
         long importedVersion = jdbc.sql("""
             INSERT INTO frame_version (frame_id, valid_from, status, source_created_at, source_modified_at)
@@ -327,9 +327,11 @@ class FrameGrpcTests {
             VALUES (:version, 1, 'FRM-3'), (:version, 2, 'FRM-2')
             """).param("version", importedVersion).update();
 
+        var before = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC).minusSeconds(1);
         Frame edited = client.updateFrame(edit("IMPORTED", importedVersion, "DRAFT"));
         assertThat(edited.getSourceCreatedAt()).isEqualTo("2022-08-01T11:00:00");
-        assertThat(edited.getSourceModifiedAt()).isEqualTo("2022-08-02T12:00:00");
+        assertThat(java.time.LocalDateTime.parse(edited.getSourceModifiedAt())).isAfter(before);
+        assertThat(history("IMPORTED").getLast().getSourceModifiedAt()).isEqualTo("2022-08-02T12:00:00");
         assertThat(edited.getExternalReferencesMap()).containsEntry("PRICE_ENTITY", "123");
         assertThat(edited.getLinkedFrameIdsList()).containsExactly("FRM-3", "FRM-2");
     }

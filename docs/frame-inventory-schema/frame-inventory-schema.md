@@ -49,14 +49,26 @@ CSV values arrive as text. A blank optional value becomes SQL `NULL`. Counts and
 | Incoming CSV row | Result |
 | --- | --- |
 | First row for a frame | Insert the stable frame and its first current version. |
-| Strictly older source `modified_date` | Leave the current row, links, and history as they were. |
-| Equal or newer source `modified_date` | Set the old row's `is_current` to false and its `valid_to` to the transition instant. Insert a current version with `valid_from` set to that same instant. |
+| Strictly older source `modified_date` | Record `STALE_RECORD` unless force overwrite is authorized. |
+| Equal source `modified_date` and equal canonical hash | Count the row as unchanged. |
+| Equal source `modified_date` and different canonical hash | Record `TIMESTAMP_COLLISION_CONFLICT` unless force overwrite is authorized. |
+| Newer source `modified_date` or forced correction | Close the current version and append its replacement at the same transition instant. |
+| Reappearance after manual deletion | Restore only when force overwrite is authorized. |
 
-The migration uses `timestamptz` for half-open validity intervals `[valid_from, valid_to)`. Check constraints require a positive interval for closed versions and tie `is_current` to whether `valid_to` is null. A partial unique index enforces at most one current version per frame.
+The migration uses `timestamptz` for half-open validity intervals
+`[valid_from, valid_to)`. Check constraints require a positive interval for
+closed versions and tie `is_current` to whether `valid_to` is null. A partial
+unique index enforces at most one current version per frame. A replacement
+opens at a database-generated instant strictly after the previous version
+started. CSV source timestamps are stored as offset-free UTC values.
 
-The future CSV upload, create, and edit paths will share a Spring `@Transactional` service. The service creates or locks the stable frame row before comparing source timestamps. It closes the current version and appends its replacement in the same transaction. The transition time must be later than the previous version's start, including when two rows are accepted in one transaction.
-
-Source timestamps retain their original wall-clock values. Equal timestamps append a new version, including when the same file is uploaded again. Manual creation can start with null source timestamps. Manual edits carry forward the last accepted source timestamp. History starts with the first accepted version because the CSV contains one snapshot per frame.
+DELTA and manual writes coordinate through the shared transaction lock and
+stable frame IDs. DELTA re-reads history under the locks and hashes the
+canonical typed payload, including references and ordered links. Manual
+writes stamp the source time in UTC after locking. The migration flags older
+manual versions so imports compare them against their recorded start.
+A forced correction preserves the CSV source time and records the import
+job ID and `FORCED_OVERWRITE` on the new version.
 
 ## Alternatives weighed
 
@@ -66,6 +78,6 @@ Source timestamps retain their original wall-clock values. Equal timestamps appe
 
 ## Scope and verification
 
-Flyway V1 defines the tables, keys, validity checks, and indexes. CSV parsing, the shared write service, and the upload, edit, and history screens are future application work.
+Flyway V1 defines the inventory tables and validity constraints. Later migrations add import jobs, staging, dispatch confirmation, and legacy manual source provenance. DELTA writes an imported version and its job result in one transaction.
 
 Flyway applied V1 on PostgreSQL 18.6 and skipped it on restart. A rollback-only check loaded all 1,000 CSV rows and exercised the database constraints. The [backend README](../../src/backend/README.md) describes how to verify the migration using `flyway_schema_history`.

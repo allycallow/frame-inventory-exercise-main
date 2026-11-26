@@ -161,7 +161,7 @@ class FrameRepository {
                 number_of_slots, impact_weight, premium, production_rate_card, production_rate_card_legacy,
                 pricing_grade
             )
-            SELECT :frameId, :postcodeId, :formatId, previous.source_created_at, previous.source_modified_at,
+            SELECT :frameId, :postcodeId, :formatId, previous.source_created_at, statement_timestamp() AT TIME ZONE 'UTC',
                    coalesce(CAST(:validFrom AS timestamptz), clock_timestamp()),
                    :source, :status, :statusReason, :siteNo, :inventorySiteNo, :panelNumber, :locationId,
                    :environment, :address, :station, :airport, :latitude, :longitude, :distanceToClosestSchool,
