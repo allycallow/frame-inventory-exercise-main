@@ -3,9 +3,32 @@
   "checkpoint_id": "01M8C4X3SNJ95CQZ9JE96E6R0N",
   "strategy": "manual-commit",
   "branch": "alex/glo-19-add-apollo-server-bff",
-  "checkpoints_count": 4,
+  "checkpoints_count": 20,
   "files_touched": [
-    "src/README.md"
+    ".github/workflows/bff-checks.yml",
+    "README.md",
+    "docker-compose.yml",
+    "src/README.md",
+    "src/bff/.gitignore",
+    "src/bff/AGENTS.md",
+    "src/bff/Dockerfile",
+    "src/bff/Dockerfile.dockerignore",
+    "src/bff/README.md",
+    "src/bff/codegen.yml",
+    "src/bff/eslint.config.mjs",
+    "src/bff/package-lock.json",
+    "src/bff/package.json",
+    "src/bff/schema/frames.gql",
+    "src/bff/schema/query.gql",
+    "src/bff/src/consts.ts",
+    "src/bff/src/frame-client.ts",
+    "src/bff/src/index.ts",
+    "src/bff/src/logger.ts",
+    "src/bff/src/resolvers/frames.ts",
+    "src/bff/src/server.ts",
+    "src/bff/test/frames.test.ts",
+    "src/bff/tsconfig.json",
+    "src/bff/tsconfig.test.json"
   ],
   "sessions": [
     {
@@ -14,14 +37,21 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 33,
-    "cache_creation_tokens": 26814,
-    "cache_read_tokens": 1858654,
-    "output_tokens": 3945,
-    "api_call_count": 11
+    "input_tokens": 616,
+    "cache_creation_tokens": 234620,
+    "cache_read_tokens": 20049529,
+    "output_tokens": 60919,
+    "api_call_count": 168
   },
   "redaction": {
     "replacements": 18,

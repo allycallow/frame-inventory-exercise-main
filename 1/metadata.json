@@ -1,0 +1,71 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8C4X3SNJ95CQZ9JE96E6R0N",
+  "session_id": "01a2180f-51d2-7e71-8410-fca663133b7d",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-26T14:42:13.52855Z",
+  "branch": "alex/glo-19-add-apollo-server-bff",
+  "checkpoints_count": 16,
+  "save_step_count": 11,
+  "files_touched": [
+    ".github/workflows/bff-checks.yml",
+    "README.md",
+    "docker-compose.yml",
+    "src/README.md",
+    "src/bff/.gitignore",
+    "src/bff/AGENTS.md",
+    "src/bff/Dockerfile",
+    "src/bff/Dockerfile.dockerignore",
+    "src/bff/README.md",
+    "src/bff/codegen.yml",
+    "src/bff/eslint.config.mjs",
+    "src/bff/package-lock.json",
+    "src/bff/package.json",
+    "src/bff/schema/frames.gql",
+    "src/bff/schema/query.gql",
+    "src/bff/src/consts.ts",
+    "src/bff/src/frame-client.ts",
+    "src/bff/src/index.ts",
+    "src/bff/src/logger.ts",
+    "src/bff/src/resolvers/frames.ts",
+    "src/bff/src/server.ts",
+    "src/bff/test/frames.test.ts",
+    "src/bff/tsconfig.json",
+    "src/bff/tsconfig.test.json"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "7112bd2be545",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 583,
+    "cache_creation_tokens": 207806,
+    "cache_read_tokens": 18190875,
+    "output_tokens": 56974,
+    "api_call_count": 157
+  },
+  "session_token_usage": {
+    "input_tokens": 583,
+    "cache_creation_tokens": 207806,
+    "cache_read_tokens": 18190875,
+    "output_tokens": 56974,
+    "api_call_count": 157
+  },
+  "redaction": {
+    "replacements": 0,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 16
+  }
+}
