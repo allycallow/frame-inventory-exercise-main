@@ -3,7 +3,7 @@
   "checkpoint_id": "01M8CK2NKNNRPWY8ENVHY4KMPZ",
   "strategy": "manual-commit",
   "branch": "alex/glo-38-remove-opensearch-from-docker-compose",
-  "checkpoints_count": 15,
+  "checkpoints_count": 16,
   "files_touched": [
     "INSTRUCTIONS.md",
     "README.md",
@@ -30,14 +30,21 @@
       "compact_transcript": "/2/transcript.jsonl",
       "content_hash": "/2/content_hash.txt",
       "prompt": "/2/prompt.txt"
+    },
+    {
+      "metadata": "/3/metadata.json",
+      "transcript": "/3/full.jsonl",
+      "compact_transcript": "/3/transcript.jsonl",
+      "content_hash": "/3/content_hash.txt",
+      "prompt": "/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 748,
-    "cache_creation_tokens": 292133,
-    "cache_read_tokens": 23800640,
-    "output_tokens": 32508,
-    "api_call_count": 212
+    "input_tokens": 890,
+    "cache_creation_tokens": 336884,
+    "cache_read_tokens": 24149908,
+    "output_tokens": 34934,
+    "api_call_count": 222
   },
   "redaction": {
     "replacements": 153,

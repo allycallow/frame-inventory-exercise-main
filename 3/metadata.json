@@ -1,0 +1,50 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8CK2NKNNRPWY8ENVHY4KMPZ",
+  "session_id": "01a2192f-6273-7622-9451-714cc8d2e2d1",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-26T18:49:56.627707Z",
+  "branch": "alex/glo-38-remove-opensearch-from-docker-compose",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "INSTRUCTIONS.md",
+    "README.md",
+    "docker-compose.yml"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "24a04432f7f9",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 142,
+    "cache_creation_tokens": 44751,
+    "cache_read_tokens": 349268,
+    "output_tokens": 2426,
+    "api_call_count": 10
+  },
+  "session_token_usage": {
+    "input_tokens": 142,
+    "cache_creation_tokens": 44751,
+    "cache_read_tokens": 349268,
+    "output_tokens": 2426,
+    "api_call_count": 10
+  },
+  "redaction": {
+    "replacements": 0,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 1
+  }
+}

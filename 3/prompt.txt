@@ -1,0 +1,5 @@
+can we remove the opensearch containers not sure we need them for anything https://linear.app/upfrontbeats/issue/GLO-38/remove-opensearch-from-docker-compose
+
+---
+
+open PR
