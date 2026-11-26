@@ -1,0 +1,74 @@
+nice merged
+
+---
+
+$egm:egm-brainstorm Let's design and implement the REST API endpoints for frame management in Spring Boot (`src/backend`), aligned with our SCD Type 2 versioned schema, and create a Linear epic and sub-tasks in the **Global** project for the work:
+
+| Endpoint | Behavior |
+|---|---|
+| `GET /api/frames` | Return a paginated list of current frames (`is_current = true`), supporting optional search/filter query parameters. |
+| `GET /api/frames/{frameId}` | Return the current frame (`is_current = true`) for the detail or edit screen (`404 Not Found` if missing or soft-deleted). |
+| `GET /api/frames/{frameId}/history` | Return all versions of the frame ordered by `valid_from DESC` for the audit history view. |
+| `POST /api/frames` | Validate input, create a new frame and its first active version (`change_source = MANUAL_CREATE`), and return `201 Created` with the `Location` header (`/api/frames/{frameId}`) and created body (`409 Conflict` if an active frame with the same `frameId` already exists). |
+| `PUT /api/frames/{frameId}` | Validate input, close out the current version, and insert a new active version (`change_source = MANUAL_EDIT`). Return `409 Conflict` if the submitted `expectedVersionId` is no longer the current active version. |
+| `DELETE /api/frames/{frameId}` | Soft-delete the frame in SCD Type 2 style: close out the current version (`is_current = false`, set `valid_to = now()`, `change_source = MANUAL_DELETE`) without inserting a new active version, preserving historical versions. Support optional `?expectedVersionId=` query parameter (`409 Conflict` on mismatch) and return `204 No Content`. |
+
+### Validation & Error Handling
+- Use Jakarta Validation (`@Valid`, `@NotBlank`, `@NotNull`, coordinate/numeric bounds, enum checks, etc.) on all request DTOs and path/query parameters.
+- Add a `@RestControllerAdvice` global exception handler returning consistent error responses (`400 Bad Request` with field-level validation details, `404 Not Found`, and `409 Conflict` for optimistic locking or duplicate key conflicts).
+
+### Testing Requirements
+- **Unit Tests:** Test the service layer (SCD Type 2 versioning transitions, optimistic concurrency `expectedVersionId` checks, and soft-delete behavior).
+- **Integration Tests:** Use `@SpringBootTest` + `MockMvc` (or `TestRestTemplate`) backed by PostgreSQL (e.g., Testcontainers) with Flyway migrations enabled to verify all endpoints end-to-end—covering happy paths, `400` validation failures, `404` missing frames, and `409` version conflicts.
+
+### Linear Epic & Sub-Tasks
+- In the **Global** Linear project, create a parent **Linear Epic** for the Frame Management REST API, broken down into scoped **sub-tasks** (e.g., read/history endpoints, create/update/delete endpoints with optimistic concurrency, request validation & global error handling, and unit/integration tests), each with clear descriptions and acceptance criteria.
+
+---
+
+Reject it with `409 Conflict` — once a `frameId` has been used (even if soft-deleted), retire it permanently so a newly created frame never splices unrelated history into `GET /api/frames/{frameId}/history`.
+
+Also, please add a `V2__add_frame_change_source.sql` Flyway migration for the `change_source` column, and file the parent epic and sub-tasks under the **Global** team board (where `GLO-1` lives).
+
+---
+
+lets leave free-text search and structured filtering for now just add pagination
+
+---
+
+maximum 50
+
+---
+
+yes lets do EGM Goldfish review
+
+---
+
+preserve change_source and record MANUAL_DELETE in a separate closed_by_change_source field
+
+---
+
+can you convert to use gRCP
+
+---
+
+nice can you update the linear ticket description progress
+
+---
+
+Also, add structured SLF4J logging across the controller, service, and exception handler layers:
+- **`INFO` level:** Log key business lifecycle events and state transitions—e.g., frame created (`frameId`, `versionId`), frame updated (`frameId`, `previousVersionId` -> `newVersionId`), frame soft-deleted (`frameId`, `closedVersionId`), and pagination summary for list requests (`page`, `size`, `totalElements`).
+- **`DEBUG` level:** Log granular execution details—e.g., incoming request parameters, optimistic concurrency checks (`expectedVersionId` vs. current `versionId`), site lookup/creation resolution, and handled client errors (`400` validation failures, `404` not found, `409` conflicts).
+- Keep logs concise and avoid dumping full request/response bodies at `INFO` level.
+
+---
+
+can you give me shell commands to run so I can test myself
+
+---
+
+I have the docker-compose running want to hit the endpoint 9090
+
+---
+
+can you get a PR ready now

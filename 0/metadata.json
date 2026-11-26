@@ -1,0 +1,76 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8BWHN2BF9BM79YFGBKYEDA2",
+  "session_id": "01a21780-21d2-7393-841f-2631c4421f83",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-26T12:16:09.069006Z",
+  "branch": "alex/glo-2-frame-management-grpc",
+  "checkpoints_count": 5,
+  "save_step_count": 8,
+  "files_touched": [
+    "concepts_brief.md",
+    "docker-compose.yml",
+    "src/backend/Dockerfile",
+    "src/backend/README.md",
+    "src/backend/build.gradle",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameAttributes.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameGrpcExceptionHandler.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameGrpcService.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameProblem.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameProtoMapper.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameRepository.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameService.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameVersion.java",
+    "src/backend/src/main/proto/frameinventory/v1/frames.proto",
+    "src/backend/src/main/resources/application.yml",
+    "src/backend/src/main/resources/db/migration/V2__add_frame_change_source.sql",
+    "src/backend/src/test/java/com/global/ct/frameinventory/ApplicationTests.java",
+    "src/backend/src/test/java/com/global/ct/frameinventory/frame/FrameGrpcTests.java",
+    "src/backend/src/test/java/com/global/ct/frameinventory/frame/FrameServiceTests.java"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "d7af45be32d6",
+  "checkpoint_transcript_start": 1179,
+  "transcript_lines_at_start": 1179,
+  "compact_transcript_start": 228,
+  "token_usage": {
+    "input_tokens": 9,
+    "cache_creation_tokens": 2437,
+    "cache_read_tokens": 621702,
+    "output_tokens": 962,
+    "api_call_count": 3
+  },
+  "session_token_usage": {
+    "input_tokens": 7742,
+    "cache_creation_tokens": 202364,
+    "cache_read_tokens": 18602721,
+    "output_tokens": 70682,
+    "api_call_count": 164,
+    "subagent_tokens": {
+      "input_tokens": 100508,
+      "cache_creation_tokens": 0,
+      "cache_read_tokens": 965555,
+      "output_tokens": 9581,
+      "api_call_count": 35
+    },
+    "subagent_tokens_complete": true
+  },
+  "redaction": {
+    "replacements": 15,
+    "layers": {
+      "betterleaks": 3,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 3,
+      "credentialed_uri": 0,
+      "entropy": 9,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 14
+  }
+}
