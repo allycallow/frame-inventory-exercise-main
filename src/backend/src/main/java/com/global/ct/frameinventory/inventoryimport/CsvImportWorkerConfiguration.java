@@ -1,5 +1,7 @@
 package com.global.ct.frameinventory.inventoryimport;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.temporal.client.WorkflowClient;
 import io.temporal.worker.WorkerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,12 +18,16 @@ import software.amazon.awssdk.services.s3.S3Client;
 class CsvImportWorkerConfiguration {
     @Bean(initMethod = "start", destroyMethod = "shutdown")
     WorkerFactory importWorker(WorkflowClient temporal, ImportStaging staging, ImportDeltaApply delta,
-                               InventoryCsvReader reader, S3Client s3,
+                               InventoryCsvReader reader, S3Client s3, MeterRegistry registry,
                                @Value("${inventory.import.dispatch.task-queue:inventory-import}") String taskQueue) {
         var factory = WorkerFactory.newInstance(temporal);
         var worker = factory.newWorker(taskQueue);
         worker.registerWorkflowImplementationTypes(CsvImportWorkflow.Implementation.class);
-        worker.registerActivitiesImplementations(new CsvImportActivities(staging, delta, reader, s3));
+        var applyDuration = Timer.builder("inventory.import.apply")
+            .description("Time spent in each import apply activity attempt")
+            .publishPercentileHistogram()
+            .register(registry);
+        worker.registerActivitiesImplementations(new CsvImportActivities(staging, delta, reader, s3, applyDuration));
         return factory;
     }
 }

@@ -140,6 +140,22 @@ class ImportJobRepository {
                 """).update();
     }
 
+    double oldestActiveSeconds(String status) {
+        return jdbc.sql("""
+                SELECT COALESCE(EXTRACT(EPOCH FROM now() - min(COALESCE(dispatch_confirmed_at, created_at))), 0)
+                FROM import_jobs
+                WHERE status = :status AND status IN ('PENDING', 'RUNNING')
+                """).param("status", status).query(Double.class).single();
+    }
+
+    long recentDispatchFailures() {
+        return jdbc.sql("""
+                SELECT count(*) FROM import_jobs
+                WHERE status = 'FAILED' AND failure_code = 'DISPATCH_FAILED'
+                  AND finished_at >= now() - interval '1 hour'
+                """).query(Long.class).single();
+    }
+
     record Job(UUID jobId, String ownerId, String importMode, boolean forceOverwrite, String status,
                String objectBucket, String objectKey, String objectVersionId, OffsetDateTime createdAt,
                OffsetDateTime uploadExpiresAt, OffsetDateTime dispatchUntil, OffsetDateTime finishedAt,

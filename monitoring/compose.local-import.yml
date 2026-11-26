@@ -1,0 +1,4 @@
+services:
+  prometheus:
+    volumes:
+      - ./monitoring/prometheus-local-import.yml:/etc/prometheus/prometheus.yml:ro
