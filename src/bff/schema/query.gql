@@ -1,0 +1,15 @@
+type Query {
+  frames(page: Int, size: Int): FramePage!
+  frame(frameId: ID!): Frame
+  frameHistory(frameId: ID!): [Frame!]!
+}
+
+type Mutation {
+  createFrame(frameId: ID!, attributes: FrameAttributesInput!): Frame!
+  updateFrame(
+    frameId: ID!
+    expectedVersionId: String!
+    attributes: FrameAttributesInput!
+  ): Frame!
+  deleteFrame(frameId: ID!, expectedVersionId: String): Boolean!
+}

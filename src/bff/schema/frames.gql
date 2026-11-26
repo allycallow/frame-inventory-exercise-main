@@ -1,0 +1,125 @@
+type FramePage {
+  items: [Frame!]!
+  page: Int!
+  size: Int!
+  hasNext: Boolean!
+}
+
+type Frame {
+  frameId: ID!
+  versionId: ID!
+  validFrom: String!
+  validTo: String
+  current: Boolean!
+  changeSource: String
+  closedByChangeSource: String
+  sourceCreatedAt: String
+  sourceModifiedAt: String
+  attributes: FrameAttributes!
+  externalReferences: [FrameReference!]!
+  linkedFrameIds: [ID!]!
+}
+
+type FrameAttributes {
+  status: String!
+  statusReason: String
+  siteNo: String
+  inventorySiteNo: String
+  panelNumber: String
+  locationId: String
+  environment: String
+  address: String
+  station: String
+  airport: String
+  latitude: String
+  longitude: String
+  distanceToClosestSchool: Int
+  location: FrameLocation
+  format: FrameFormat
+  sizeCode: String
+  aspectRatioCode: String
+  tSize: String
+  pixelHeight: Int
+  pixelWidth: Int
+  illuminationTypeId: Int
+  numberOfSlots: Int
+  impactWeight: String
+  premium: Boolean!
+  productionRateCard: String
+  productionRateCardLegacy: String
+  pricingGrade: String
+}
+
+type FrameLocation {
+  countryCode: String!
+  region: String!
+  town: String!
+  postcode: String!
+}
+
+type FrameFormat {
+  technology: String!
+  formatCode: String!
+  sizeGroupCode: String!
+}
+
+type FrameReference {
+  key: String!
+  value: String!
+}
+
+input FrameAttributesInput {
+  status: FrameStatus!
+  statusReason: String
+  siteNo: String
+  inventorySiteNo: String
+  panelNumber: String
+  locationId: String
+  environment: String
+  address: String
+  station: String
+  airport: String
+  latitude: String
+  longitude: String
+  distanceToClosestSchool: Int
+  location: FrameLocationInput
+  format: FrameFormatInput
+  sizeCode: String
+  aspectRatioCode: String
+  tSize: String
+  pixelHeight: Int
+  pixelWidth: Int
+  illuminationTypeId: Int
+  numberOfSlots: Int
+  impactWeight: String
+  premium: Boolean
+  productionRateCard: String
+  productionRateCardLegacy: String
+  pricingGrade: String
+}
+
+input FrameLocationInput {
+  countryCode: String!
+  region: String!
+  town: String!
+  postcode: String!
+}
+
+input FrameFormatInput {
+  technology: FrameTechnology!
+  formatCode: String!
+  sizeGroupCode: String!
+}
+
+enum FrameStatus {
+  LIVE
+  PENDING
+  MAINTENANCE
+  BLOCKED
+  DRAFT
+}
+
+enum FrameTechnology {
+  CLASSIC
+  DIGITAL
+}
