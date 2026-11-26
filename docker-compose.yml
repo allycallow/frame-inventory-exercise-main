@@ -150,6 +150,29 @@ services:
     networks:
       - frame-inventory
 
+  loki:
+    image: grafana/loki:3.7.0
+    command: ["-config.file=/etc/loki/frame-inventory.yml"]
+    volumes:
+      - ./monitoring/loki.yml:/etc/loki/frame-inventory.yml:ro
+      - loki-data:/loki
+    networks:
+      - frame-inventory
+
+  alloy:
+    image: grafana/alloy:v1.21.0
+    command: ["run", "--storage.path=/var/lib/alloy/data", "/etc/alloy/config.alloy"]
+    environment:
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
+    volumes:
+      - ./monitoring/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy-data:/var/lib/alloy/data
+    depends_on:
+      - loki
+    networks:
+      - frame-inventory
+
   grafana:
     image: grafana/grafana:13.3.2
     ports:
@@ -161,6 +184,7 @@ services:
       - grafana-data:/var/lib/grafana
     depends_on:
       - prometheus
+      - alloy
     networks:
       - frame-inventory
 
@@ -169,6 +193,8 @@ volumes:
   opensearch-data:
   prometheus-data:
   grafana-data:
+  loki-data:
+  alloy-data:
 
 networks:
   frame-inventory:

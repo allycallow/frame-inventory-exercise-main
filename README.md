@@ -4,7 +4,7 @@ Monorepo scaffold for the frame-inventory take-home exercise.
 
 ## System Overview
 
-The Next.js page calls the Spring Boot health endpoint through a same-origin rewrite. Docker Compose runs both modules alongside PostgreSQL, OpenSearch, OpenSearch Dashboards, Prometheus, Grafana, and the OpenTelemetry Collector. The exercise provides a legacy export in `data/inventory_frame.csv` and describes the inventory features in `INSTRUCTIONS.md`.
+The Next.js page calls the Spring Boot health endpoint through a same-origin rewrite. Docker Compose runs both modules alongside PostgreSQL, OpenSearch, OpenSearch Dashboards, Prometheus, Grafana, Loki, Alloy, and the OpenTelemetry Collector. The exercise provides a legacy export in `data/inventory_frame.csv` and describes the inventory features in `INSTRUCTIONS.md`.
 
 Bring the whole stack up with one command.
 
@@ -42,7 +42,7 @@ If you have `just` installed, run `just` to list the available recipes.
 | opensearch-dashboards | 5601      | 5601           | UI for the OpenSearch cluster above                    |
 | prometheus            | 9091      | 9090           | Scrapes Spring Boot and Apollo metrics every 15 seconds |
 | otel-collector        | 9464      | 9464           | Scrapes Spring Boot metrics for local inspection       |
-| grafana               | 3001      | 3000           | Queries the provisioned Prometheus data source        |
+| grafana               | 3001      | 3000           | Queries provisioned Prometheus and Loki data            |
 
 ### Credentials
 
@@ -124,6 +124,18 @@ latency over the selected time range. Run the [frame list query](./src/bff/READM
 several times across at least two scrapes. Run `{ frames(page: -1) { page } }`
 to generate a GraphQL error. The dashboard counts GraphQL errors even when
 Apollo responds with HTTP 200.
+
+### Backend and BFF logs
+
+Run `docker compose up -d --build bff grafana`. Alloy reads the backend and
+BFF containers’ stdout and stderr through the Docker socket and sends them
+to Loki. Loki stores logs in the `loki-data` volume.
+
+Open [Grafana Explore](http://127.0.0.1:3001/explore), select **Loki**,
+and switch to **Code** mode to run either LogQL query.
+
+- Backend — `{service_name="backend"}`
+- BFF — `{service_name="bff"}`
 
 ### OpenTelemetry Collector
 
