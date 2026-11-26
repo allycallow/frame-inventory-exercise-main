@@ -116,3 +116,38 @@ Final job summaries and the frame-version reference are durable. Row
 diagnostics expire seven days after job completion and are purged by hourly
 maintenance while the import profile is running. Worker counts and row errors
 are populated by the staging and apply tasks.
+
+### Local SQS dispatch
+
+With the `local-import` profile enabled, set
+`INVENTORY_IMPORT_DISPATCH_ENABLED=true` to poll the source queue and its
+dead-letter queue. Start the `aws` and `temporal` services from the Compose import
+profile.
+
+| Variable | Local value |
+| --- | --- |
+| `INVENTORY_IMPORT_DISPATCH_AWS_ENDPOINT` | `http://127.0.0.1:4566` |
+| `INVENTORY_IMPORT_DISPATCH_QUEUE_URL` | `http://127.0.0.1:4566/000000000000/inventory-import` |
+| `INVENTORY_IMPORT_DISPATCH_DLQ_URL` | `http://127.0.0.1:4566/000000000000/inventory-import-dlq` |
+| `INVENTORY_IMPORT_DISPATCH_TEMPORAL_TARGET` | `127.0.0.1:7233` (default) |
+| `INVENTORY_IMPORT_DISPATCH_TEMPORAL_NAMESPACE` | `default` (default) |
+| `INVENTORY_IMPORT_DISPATCH_TASK_QUEUE` | `inventory-import` (default) |
+
+Dispatch verifies the exact object version and the 10 MiB processing cap, then
+persists the binding before starting `CsvImportWorkflow` with the job ID as
+its sole argument. The workflow ID is `csv-import-{jobId}`. Temporal reuses a
+running execution and rejects a duplicate after it has closed. PostgreSQL records
+confirmed starts so a late duplicate is harmless after Temporal history expires.
+The workflow
+execution timeout is one hour. The worker must claim the bound PENDING job
+before applying inventory, and must exit if the claim fails.
+
+Each SQS message is acknowledged after all applicable records are handled.
+Failed source messages retry with a visibility delay starting at five seconds
+and capped at one minute. SQS redrives after five receives. The dead-letter
+consumer preserves jobs with a known Temporal execution. If Temporal confirms
+there is no execution, it waits until the dispatch deadline before failing a
+bound PENDING job. A valid event whose object binding never committed can fail
+an AWAITING_UPLOAD job directly. An indeterminate lookup retries without
+changing job state. Expired or terminal jobs and notifications for another
+version cannot restart an import.

@@ -77,6 +77,52 @@ class ImportJobRepository {
             .param("version", version).query(Boolean.class).single();
     }
 
+    Optional<Job> findUpload(UUID id, String bucket, String key) {
+        return jdbc.sql("SELECT * FROM import_jobs WHERE job_id = :id AND object_bucket = :bucket AND object_key = :key")
+            .param("id", id).param("bucket", bucket).param("key", key).query(Job.class).optional();
+    }
+
+    Optional<Job> lockBoundUpload(UUID id, String version) {
+        return jdbc.sql("SELECT * FROM import_jobs WHERE job_id = :id AND object_version_id = :version FOR UPDATE")
+            .param("id", id).param("version", version).query(Job.class).optional();
+    }
+
+    void confirmDispatch(UUID id, String version) {
+        jdbc.sql("""
+                UPDATE import_jobs SET dispatch_confirmed_at = clock_timestamp()
+                WHERE job_id = :id AND status = 'PENDING' AND object_version_id = :version
+                  AND dispatch_confirmed_at IS NULL
+                """).param("id", id).param("version", version).update();
+    }
+
+    void failDispatch(UUID id, String version) {
+        jdbc.sql("""
+                UPDATE import_jobs
+                SET status = 'FAILED', finished_at = clock_timestamp(), failure_code = 'DISPATCH_FAILED'
+                WHERE job_id = :id AND status = 'PENDING' AND object_version_id = :version
+                  AND dispatch_confirmed_at IS NULL
+                """).param("id", id).param("version", version).update();
+    }
+
+    void rejectOversizedUpload(UUID id, String bucket, String key, Instant uploadedAt) {
+        failAwaitingUpload(id, bucket, key, uploadedAt, "UPLOAD_TOO_LARGE");
+    }
+
+    void failUnboundDispatch(UUID id, String bucket, String key, Instant uploadedAt) {
+        failAwaitingUpload(id, bucket, key, uploadedAt, "DISPATCH_FAILED");
+    }
+
+    private void failAwaitingUpload(UUID id, String bucket, String key, Instant uploadedAt, String reason) {
+        jdbc.sql("""
+                UPDATE import_jobs
+                SET status = 'FAILED', finished_at = clock_timestamp(), failure_code = :reason
+                WHERE job_id = :id AND object_bucket = :bucket AND object_key = :key
+                  AND status = 'AWAITING_UPLOAD'
+                  AND :uploadedAt >= created_at - interval '1 second' AND :uploadedAt <= dispatch_until
+                """).param("id", id).param("bucket", bucket).param("key", key)
+            .param("reason", reason).param("uploadedAt", uploadedAt.atOffset(ZoneOffset.UTC)).update();
+    }
+
     List<RowError> errors(UUID id, long offset, int limit) {
         return jdbc.sql("""
                 SELECT e.row_number, e.code, e.frame_id, e.detail
@@ -98,7 +144,7 @@ class ImportJobRepository {
                String objectBucket, String objectKey, String objectVersionId, OffsetDateTime createdAt,
                OffsetDateTime uploadExpiresAt, OffsetDateTime dispatchUntil, OffsetDateTime finishedAt,
                int rowsRead, int rowsApplied, int rowsUnchanged, int rowsRejected, int framesRetired,
-               String failureCode) {}
+               String failureCode, OffsetDateTime dispatchConfirmedAt) {}
 
     record RowError(int rowNumber, String code, String frameId, String detail) {}
 }
