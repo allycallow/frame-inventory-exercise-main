@@ -1,12 +1,15 @@
 'use client'
 
 import { useState, type ReactElement } from 'react'
+import { CreateFrameDialog } from './create-frame-dialog'
 import { InventoryImport } from './inventory-import'
 import { InventoryList } from './inventory-list'
 
 export function InventoryWorkspace(): ReactElement {
   const [area, setArea] = useState<'frames' | 'imports'>('frames')
   const [jobId, setJobId] = useState('')
+  const [creatingFrame, setCreatingFrame] = useState(false)
+  const [createdFrame, setCreatedFrame] = useState<string | null>(null)
 
   return (
     <>
@@ -36,15 +39,34 @@ export function InventoryWorkspace(): ReactElement {
               <h1>Frames</h1>
               <p className="subtle">Select a frame ID to view its version history.</p>
             </div>
-            <button className="button button-primary" onClick={() => setArea('imports')}>
-              Import CSV
-            </button>
+            <div className="actions">
+              <button className="button button-secondary" onClick={() => setArea('imports')}>
+                Import CSV
+              </button>
+              <button className="button button-primary" onClick={() => setCreatingFrame(true)}>
+                Add a frame
+              </button>
+            </div>
           </div>
+          {createdFrame && (
+            <p className="card panel-message frame-created" role="status">
+              Frame <strong>{createdFrame}</strong> was created.
+            </p>
+          )}
           {area === 'frames' && (
             <InventoryList
               onJob={(id) => {
                 setJobId(id)
                 setArea('imports')
+              }}
+            />
+          )}
+          {creatingFrame && (
+            <CreateFrameDialog
+              onClose={() => setCreatingFrame(false)}
+              onCreated={(frameId) => {
+                setCreatedFrame(frameId)
+                setCreatingFrame(false)
               }}
             />
           )}
