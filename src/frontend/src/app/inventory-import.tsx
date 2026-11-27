@@ -22,7 +22,7 @@ const TOKEN = /^[a-f0-9]{64}$/
 const MAX_BYTES = 10 * 1024 * 1024
 
 async function putCsv(upload: Upload, file: File): Promise<void> {
-  const headers = new Headers(upload.uploadHeaders.map(({ name, value }) => [name, value]))
+  const headers = new Headers(upload.uploadHeaders.map<[string, string]>(({ name, value }) => [name, value]))
   const response = await fetch(upload.uploadUrl, { method: 'PUT', headers, body: file })
   if (response.status === 412) return // A prior attempt already stored this one-write object.
   if (!response.ok) throw new Error(`Upload failed (HTTP ${response.status}).`)

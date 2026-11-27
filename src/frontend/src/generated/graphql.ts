@@ -3,6 +3,60 @@ import type { TypedDocumentNode as DocumentNode } from '@apollo/client';
 type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 /** Internal type. DO NOT USE DIRECTLY. */
 export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
+export type FrameAttributesInput = {
+  address?: string | null | undefined;
+  airport?: string | null | undefined;
+  aspectRatioCode?: string | null | undefined;
+  distanceToClosestSchool?: number | null | undefined;
+  environment?: string | null | undefined;
+  format?: FrameFormatInput | null | undefined;
+  illuminationTypeId?: number | null | undefined;
+  impactWeight?: string | null | undefined;
+  inventorySiteNo?: string | null | undefined;
+  latitude?: string | null | undefined;
+  location?: FrameLocationInput | null | undefined;
+  locationId?: string | null | undefined;
+  longitude?: string | null | undefined;
+  numberOfSlots?: number | null | undefined;
+  panelNumber?: string | null | undefined;
+  pixelHeight?: number | null | undefined;
+  pixelWidth?: number | null | undefined;
+  premium?: boolean | null | undefined;
+  pricingGrade?: string | null | undefined;
+  productionRateCard?: string | null | undefined;
+  productionRateCardLegacy?: string | null | undefined;
+  siteNo?: string | null | undefined;
+  sizeCode?: string | null | undefined;
+  station?: string | null | undefined;
+  status: FrameStatus;
+  statusReason?: string | null | undefined;
+  tSize?: string | null | undefined;
+};
+
+export type FrameFormatInput = {
+  formatCode: string;
+  sizeGroupCode: string;
+  technology: FrameTechnology;
+};
+
+export type FrameLocationInput = {
+  countryCode: string;
+  postcode: string;
+  region: string;
+  town: string;
+};
+
+export type FrameStatus =
+  | 'BLOCKED'
+  | 'DRAFT'
+  | 'LIVE'
+  | 'MAINTENANCE'
+  | 'PENDING';
+
+export type FrameTechnology =
+  | 'CLASSIC'
+  | 'DIGITAL';
+
 export type ImportJobStatus =
   | 'AWAITING_UPLOAD'
   | 'COMPLETED'
@@ -11,6 +65,14 @@ export type ImportJobStatus =
   | 'FAILED'
   | 'PENDING'
   | 'RUNNING';
+
+export type CreateFrameMutationVariables = Exact<{
+  frameId: string | number;
+  attributes: FrameAttributesInput;
+}>;
+
+
+export type CreateFrameMutation = { createFrame: { __typename: 'Frame', frameId: string } };
 
 export type ImportJobSummaryFragment = { __typename: 'ImportJob', jobId: string, status: ImportJobStatus, forceOverwrite: boolean, uploadExpiresAt: string, finishedAt: string | null, rowsRead: number, rowsApplied: number, rowsUnchanged: number, rowsRejected: number, failureCode: string | null };
 
@@ -51,6 +113,7 @@ export type FrameHistoryQueryVariables = Exact<{
 export type FrameHistoryQuery = { frameHistory: Array<{ __typename: 'Frame', versionId: string, validFrom: string, validTo: string | null, current: boolean, changeSource: string | null, closedByChangeSource: string | null, importJobId: string | null, attributes: { __typename: 'FrameAttributes', status: string, statusReason: string | null } }> };
 
 export const ImportJobSummaryFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ImportJobSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ImportJob"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"jobId"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"forceOverwrite"}},{"kind":"Field","name":{"kind":"Name","value":"uploadExpiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"finishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"rowsRead"}},{"kind":"Field","name":{"kind":"Name","value":"rowsApplied"}},{"kind":"Field","name":{"kind":"Name","value":"rowsUnchanged"}},{"kind":"Field","name":{"kind":"Name","value":"rowsRejected"}},{"kind":"Field","name":{"kind":"Name","value":"failureCode"}}]}}]} as unknown as DocumentNode<ImportJobSummaryFragment, unknown>;
+export const CreateFrameDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateFrame"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"frameId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"attributes"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"FrameAttributesInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createFrame"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"frameId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"frameId"}}},{"kind":"Argument","name":{"kind":"Name","value":"attributes"},"value":{"kind":"Variable","name":{"kind":"Name","value":"attributes"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"frameId"}}]}}]}}]} as unknown as DocumentNode<CreateFrameMutation, CreateFrameMutationVariables>;
 export const CreateImportDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateImport"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"force"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createImportJob"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"mode"},"value":{"kind":"EnumValue","value":"DELTA"}},{"kind":"Argument","name":{"kind":"Name","value":"forceOverwrite"},"value":{"kind":"Variable","name":{"kind":"Name","value":"force"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"job"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ImportJobSummary"}}]}},{"kind":"Field","name":{"kind":"Name","value":"uploadUrl"}},{"kind":"Field","name":{"kind":"Name","value":"uploadHeaders"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ImportJobSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ImportJob"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"jobId"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"forceOverwrite"}},{"kind":"Field","name":{"kind":"Name","value":"uploadExpiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"finishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"rowsRead"}},{"kind":"Field","name":{"kind":"Name","value":"rowsApplied"}},{"kind":"Field","name":{"kind":"Name","value":"rowsUnchanged"}},{"kind":"Field","name":{"kind":"Name","value":"rowsRejected"}},{"kind":"Field","name":{"kind":"Name","value":"failureCode"}}]}}]} as unknown as DocumentNode<CreateImportMutation, CreateImportMutationVariables>;
 export const ImportStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ImportStatus"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"importJob"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"jobId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ImportJobSummary"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ImportJobSummary"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ImportJob"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"jobId"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"forceOverwrite"}},{"kind":"Field","name":{"kind":"Name","value":"uploadExpiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"finishedAt"}},{"kind":"Field","name":{"kind":"Name","value":"rowsRead"}},{"kind":"Field","name":{"kind":"Name","value":"rowsApplied"}},{"kind":"Field","name":{"kind":"Name","value":"rowsUnchanged"}},{"kind":"Field","name":{"kind":"Name","value":"rowsRejected"}},{"kind":"Field","name":{"kind":"Name","value":"failureCode"}}]}}]} as unknown as DocumentNode<ImportStatusQuery, ImportStatusQueryVariables>;
 export const RowErrorsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"RowErrors"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"importRowErrors"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"jobId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"size"},"value":{"kind":"IntValue","value":"25"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rowNumber"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"frameId"}},{"kind":"Field","name":{"kind":"Name","value":"detail"}}]}},{"kind":"Field","name":{"kind":"Name","value":"page"}},{"kind":"Field","name":{"kind":"Name","value":"hasNext"}}]}}]}}]} as unknown as DocumentNode<RowErrorsQuery, RowErrorsQueryVariables>;

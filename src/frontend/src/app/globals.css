@@ -60,7 +60,8 @@ h2 {
   letter-spacing: -0.02em;
 }
 button,
-input {
+input,
+select {
   font: inherit;
 }
 button {
@@ -309,7 +310,8 @@ tbody tr:last-child th {
   font-weight: 400;
   font-size: 13px;
 }
-.field input {
+.field input,
+.field select {
   width: 100%;
   min-width: 0;
   min-height: 38px;
@@ -396,7 +398,8 @@ tbody tr:last-child th {
   grid-column: 1 / -1;
 }
 
-.history-dialog {
+.history-dialog,
+.create-frame-dialog {
   position: fixed;
   inset: 0 0 0 auto;
   margin: 0;
@@ -409,8 +412,32 @@ tbody tr:last-child th {
   color: var(--text);
   box-shadow: -12px 0 32px #0f18201a;
 }
-.history-dialog::backdrop {
+.history-dialog::backdrop,
+.create-frame-dialog::backdrop {
   background: #0f182054;
+}
+.create-frame-form {
+  padding: 20px;
+}
+.create-frame-form fieldset {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.create-frame-form fieldset p {
+  grid-column: 1 / -1;
+}
+.create-frame-form legend {
+  padding: 0 4px;
+  font-weight: 600;
+}
+.frame-created {
+  margin-bottom: 16px;
+  color: var(--green);
+  overflow-wrap: anywhere;
 }
 .drawer-header {
   position: sticky;
@@ -473,6 +500,9 @@ tbody tr:last-child th {
 }
 
 @media (max-width: 380px) {
+  .create-frame-form fieldset {
+    grid-template-columns: 1fr;
+  }
   .counts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

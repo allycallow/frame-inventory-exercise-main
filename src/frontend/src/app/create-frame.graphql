@@ -1,0 +1,5 @@
+mutation CreateFrame($frameId: ID!, $attributes: FrameAttributesInput!) {
+  createFrame(frameId: $frameId, attributes: $attributes) {
+    frameId
+  }
+}

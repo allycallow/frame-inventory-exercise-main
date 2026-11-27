@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test": "jest",
     "codegen": "graphql-codegen --config codegen.yml",
     "codegen:check": "npm run codegen -- --check"
   },
@@ -23,16 +24,25 @@
     "@graphql-codegen/cli": "^8.0.0",
     "@graphql-codegen/typed-document-node": "^8.0.0",
     "@graphql-codegen/typescript-operations": "^7.0.3",
+    "@jest/globals": "^30.5.2",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.0.0",
+    "jest": "^30.5.2",
     "typescript": "^5.9.0"
   },
   "overrides": {
     "graphql-config@6.0.0": {
       "minimatch": "^11.0.1"
+    },
+    "jest": {
+      ".": "$jest",
+      "glob": "^14.0.2",
+      "test-exclude@7.0.2": {
+        "minimatch": "^11.0.1"
+      }
     }
   }
 }
