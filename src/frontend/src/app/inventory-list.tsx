@@ -108,16 +108,11 @@ function HistoryDialog({
 export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): ReactElement {
   const [variables, setVariables] = useState<FramesQueryVariables>({ page: 0 })
 
-  function applyFilters(event: FormEvent<HTMLFormElement>): void {
+  function submitSearch(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
     const search = String(form.get('search') ?? '').trim()
-    const status = form.get('status')
-    setVariables({
-      page: 0,
-      search: search || undefined,
-      statuses: typeof status === 'string' && status ? [status] : undefined,
-    })
+    setVariables((current) => ({ ...current, page: 0, search: search || undefined }))
   }
 
   return (
@@ -126,7 +121,7 @@ export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): Re
         className="frame-filters"
         role="search"
         aria-label="Filter frames"
-        onSubmit={applyFilters}
+        onSubmit={submitSearch}
         onReset={() => setVariables({ page: 0 })}
       >
         <label className="field frame-search">
@@ -135,7 +130,17 @@ export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): Re
         </label>
         <label className="field">
           Status
-          <select name="status">
+          <select
+            name="status"
+            onChange={(event) => {
+              const status = event.currentTarget.value
+              setVariables((current) => ({
+                ...current,
+                page: 0,
+                statuses: status ? [status] : undefined,
+              }))
+            }}
+          >
             <option value="">All statuses</option>
             {FRAME_STATUSES.map((status) => (
               <option key={status} value={status}>
@@ -145,7 +150,7 @@ export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): Re
           </select>
         </label>
         <div className="actions">
-          <button className="button button-primary" type="submit">Apply filters</button>
+          <button className="button button-primary" type="submit">Search</button>
           <button className="button button-secondary" type="reset">Clear filters</button>
         </div>
       </form>
