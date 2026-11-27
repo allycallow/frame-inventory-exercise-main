@@ -1,0 +1,48 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8E4YZXEW5AGR0P8DV3X5CNY",
+  "session_id": "01a217d9-f515-7393-baa3-cf062dbe68a3",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-27T09:21:43.507512Z",
+  "branch": "alex/glo-36-run-delta-imports-with-python-worker",
+  "checkpoints_count": 4,
+  "save_step_count": 4,
+  "files_touched": [
+    "src/backend/README.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "df654544a337",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 142,
+    "cache_creation_tokens": 26384,
+    "cache_read_tokens": 214306,
+    "output_tokens": 1089,
+    "api_call_count": 10
+  },
+  "session_token_usage": {
+    "input_tokens": 142,
+    "cache_creation_tokens": 26384,
+    "cache_read_tokens": 214306,
+    "output_tokens": 1089,
+    "api_call_count": 10
+  },
+  "redaction": {
+    "replacements": 0,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 4
+  }
+}
