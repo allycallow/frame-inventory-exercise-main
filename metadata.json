@@ -3,7 +3,7 @@
   "checkpoint_id": "01M8EBY6R3JWT3N83NMGEFY5D1",
   "strategy": "manual-commit",
   "branch": "alex/glo-46-frontend-use-the-design-system-tokens",
-  "checkpoints_count": 36,
+  "checkpoints_count": 37,
   "files_touched": [
     "docker-compose.yml",
     "src/frontend/.dockerignore",
@@ -36,14 +36,21 @@
       "compact_transcript": "/2/transcript.jsonl",
       "content_hash": "/2/content_hash.txt",
       "prompt": "/2/prompt.txt"
+    },
+    {
+      "metadata": "/3/metadata.json",
+      "transcript": "/3/full.jsonl",
+      "compact_transcript": "/3/transcript.jsonl",
+      "content_hash": "/3/content_hash.txt",
+      "prompt": "/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 679,
-    "cache_creation_tokens": 171169,
-    "cache_read_tokens": 29905019,
-    "output_tokens": 45949,
-    "api_call_count": 189
+    "input_tokens": 896,
+    "cache_creation_tokens": 265151,
+    "cache_read_tokens": 32526328,
+    "output_tokens": 55438,
+    "api_call_count": 224
   },
   "redaction": {
     "replacements": 59,
