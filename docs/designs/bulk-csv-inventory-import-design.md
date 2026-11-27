@@ -100,7 +100,7 @@ Deliver the operator-facing DELTA path first. Enable FULL_SNAPSHOT after measuri
 1. Add the import storage and schema invariants.
 
    - Create [V3__create_inventory_import.sql](../../src/backend/src/main/resources/db/migration/V3__create_inventory_import.sql) for import_jobs, import_row_errors, staging rows and completion markers, scope watermarks, and import provenance on frame versions. Enforce one accepted object version per job, valid scope shape, and stable row error keys. Keep staging rows and their completion marker unlogged, with indexes for job/attempt and presence checks. Keep the durable job result separate.
-   - Update [frame-inventory-schema.md](../../docs/frame-inventory-schema/frame-inventory-schema.md) to document source timestamps, interval boundaries, collision handling, retirement, and force-only restoration after manual deletion.
+   - Update [frame-inventory-schema.md](frame-inventory-schema.md) to document source timestamps, interval boundaries, collision handling, retirement, and force-only restoration after manual deletion.
 
 2. Add the backend job and worker entry points.
 

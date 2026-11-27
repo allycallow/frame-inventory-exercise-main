@@ -8,7 +8,7 @@ The backend is a Java 21 Spring Boot application. Spring gRPC serves frame manag
 
 - [Source tree](./src/README.md) contains the application and its runtime configuration.
 - [Inventory migration](./src/main/resources/db/migration/V1__create_frame_inventory.sql) creates the frame, version history, and related tables.
-- [Frame inventory schema](../../docs/frame-inventory-schema/frame-inventory-schema.md) maps the CSV fields and describes the shared Spring write transaction.
+- [Frame inventory schema](../../docs/designs/frame-inventory-schema.md) maps the CSV fields and describes the shared Spring write transaction.
 
 ## Local development
 
@@ -29,7 +29,7 @@ migrations during the integration tests.
 
 The [Protobuf definition](src/main/proto/frameinventory/v1/frames.proto) declares
 the six RPCs. Run `./gradlew generateProto` to generate the Java messages and
-stubs. The [API contract](../../docs/frame-management-grpc-api.md#grpc-contract) describes
+stubs. The [API contract](../../docs/designs/frame-management-grpc-api.md#grpc-contract) describes
 pagination, request fields, errors, and version checks.
 
 With the backend running, call the service from `src/backend` using `grpcurl`.
