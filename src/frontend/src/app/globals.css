@@ -60,7 +60,8 @@ h2 {
   letter-spacing: -0.02em;
 }
 button,
-input {
+input,
+select {
   font: inherit;
 }
 button {
@@ -203,26 +204,8 @@ main {
   padding: 16px;
   border-bottom: 1px solid var(--border);
 }
-.frame-filters .field {
+.frame-search {
   flex: 1 1 220px;
-}
-.frame-statuses {
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-.frame-statuses legend {
-  padding: 0;
-  font-weight: 600;
-}
-.frame-statuses > div {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 12px;
-  min-height: 38px;
-  padding-block: 5px;
 }
 table {
   width: 100%;
@@ -338,7 +321,8 @@ tbody tr:last-child th {
   font-weight: 400;
   font-size: 13px;
 }
-.field input {
+.field input,
+.field select {
   width: 100%;
   min-width: 0;
   min-height: 38px;

@@ -112,12 +112,11 @@ export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): Re
     event.preventDefault()
     const form = new FormData(event.currentTarget)
     const search = String(form.get('search') ?? '').trim()
-    const selectedStatuses = form.getAll('statuses')
-    const statuses = FRAME_STATUSES.filter((status) => selectedStatuses.includes(status))
+    const status = form.get('status')
     setVariables({
       page: 0,
       search: search || undefined,
-      statuses: statuses.length ? statuses : undefined,
+      statuses: typeof status === 'string' && status ? [status] : undefined,
     })
   }
 
@@ -130,21 +129,21 @@ export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): Re
         onSubmit={applyFilters}
         onReset={() => setVariables({ page: 0 })}
       >
-        <label className="field">
+        <label className="field frame-search">
           Frame ID or town
           <input type="search" name="search" />
         </label>
-        <fieldset className="frame-statuses">
-          <legend>Status</legend>
-          <div>
+        <label className="field">
+          Status
+          <select name="status">
+            <option value="">All statuses</option>
             {FRAME_STATUSES.map((status) => (
-              <label key={status} className="check">
-                <input type="checkbox" name="statuses" value={status} />
+              <option key={status} value={status}>
                 {label(status)}
-              </label>
+              </option>
             ))}
-          </div>
-        </fieldset>
+          </select>
+        </label>
         <div className="actions">
           <button className="button button-primary" type="submit">Apply filters</button>
           <button className="button button-secondary" type="reset">Clear filters</button>
