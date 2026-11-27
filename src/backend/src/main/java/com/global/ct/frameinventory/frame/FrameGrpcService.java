@@ -1,5 +1,7 @@
 package com.global.ct.frameinventory.frame;
 
+import java.util.List;
+
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 import jakarta.validation.ConstraintViolationException;
@@ -43,14 +45,17 @@ class FrameGrpcService extends FrameManagementGrpc.FrameManagementImplBase {
 
     @Override
     public void listFrames(ListFramesRequest request, StreamObserver<ListFramesResponse> response) {
-        var query = new PageQuery(request.getPage(), request.hasSize() ? request.getSize() : 25);
+        var query = new ListQuery(
+            request.getPage(), request.hasSize() ? request.getSize() : 25,
+            request.getStatusesList(), request.getSearch().strip()
+        );
         LOGGER.atDebug()
             .addKeyValue("rpc", "ListFrames")
             .addKeyValue("page", query.page())
             .addKeyValue("size", query.size())
             .log("frame.rpc_received");
         validate(query);
-        var page = frames.list(query.page(), query.size());
+        var page = frames.list(query.page(), query.size(), query.statuses(), query.search());
         var items = page.items().stream().map(FrameProtoMapper::toProto).toList();
         reply(response, ListFramesResponse.newBuilder()
             .addAllItems(items)
@@ -136,7 +141,12 @@ class FrameGrpcService extends FrameManagementGrpc.FrameManagementImplBase {
         response.onCompleted();
     }
 
-    private record PageQuery(@PositiveOrZero int page, @Positive @Max(50) int size) {}
+    private record ListQuery(
+        @PositiveOrZero int page,
+        @Positive @Max(50) int size,
+        List<@Pattern(regexp = "[^\\x00]*") String> statuses,
+        @Pattern(regexp = "[^\\x00]*") String search
+    ) {}
 
     private record FrameId(@NotBlank String frameId) {}
 

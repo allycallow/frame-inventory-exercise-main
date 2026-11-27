@@ -23,6 +23,10 @@ message ListFramesRequest {
   optional int32 page = 1;
   // Defaults to 25. Valid values are 1 through 50.
   optional int32 size = 2;
+  // Match any of these exact status codes. An empty list allows all statuses.
+  repeated string statuses = 3;
+  // Case-insensitive literal substring of the frame ID or town. Blank disables search.
+  string search = 4;
 }
 
 message ListFramesResponse {
