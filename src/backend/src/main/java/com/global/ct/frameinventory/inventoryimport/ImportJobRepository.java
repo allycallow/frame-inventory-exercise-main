@@ -156,6 +156,27 @@ class ImportJobRepository {
                 """).query(Long.class).single();
     }
 
+    long recentFinishedJobs(String status) {
+        return jdbc.sql("""
+                SELECT count(*) FROM import_jobs
+                WHERE import_mode = 'DELTA' AND status = :status
+                  AND finished_at >= now() - interval '1 hour'
+                """).param("status", status).query(Long.class).single();
+    }
+
+    long recentRowOutcome(String outcome) {
+        return jdbc.sql("""
+                SELECT COALESCE(sum(CASE :outcome
+                    WHEN 'applied' THEN rows_applied
+                    WHEN 'unchanged' THEN rows_unchanged
+                    WHEN 'rejected' THEN rows_rejected
+                END), 0)
+                FROM import_jobs
+                WHERE import_mode = 'DELTA' AND status IN ('COMPLETED', 'COMPLETED_WITH_ERRORS')
+                  AND finished_at >= now() - interval '1 hour'
+                """).param("outcome", outcome).query(Long.class).single();
+    }
+
     record Job(UUID jobId, String ownerId, String importMode, boolean forceOverwrite, String status,
                String objectBucket, String objectKey, String objectVersionId, OffsetDateTime createdAt,
                OffsetDateTime uploadExpiresAt, OffsetDateTime dispatchUntil, OffsetDateTime finishedAt,

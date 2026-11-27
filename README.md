@@ -394,7 +394,12 @@ docker compose -f docker-compose.yml -f monitoring/compose.local-import.yml \
   up -d --no-deps prometheus grafana
 ```
 
-The import dashboard shows the age of the oldest pending and running jobs,
+The import dashboard shows how many jobs completed, completed with errors,
+failed or expired in the preceding hour. It also shows how many rows were
+applied, unchanged or rejected, and the percentage rejected. The row metrics
+use saved results from jobs that completed, including those with row errors.
+
+The dashboard also shows the age of the oldest pending and running jobs,
 terminal dispatch failures in the last hour, and mean and p95 apply duration.
 [Frame Inventory Imports dashboard](http://127.0.0.1:3001/d/frame-inventory-imports/frame-inventory-imports)
 
