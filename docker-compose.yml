@@ -74,7 +74,8 @@ services:
 
   frontend:
     build:
-      context: ./src/frontend
+      context: .
+      dockerfile: src/frontend/Dockerfile
     container_name: frame-inventory-frontend
     ports:
       - "127.0.0.1:3000:3000"
@@ -82,9 +83,10 @@ services:
       BACKEND_URL: http://backend:8080
       BFF_URL: http://bff:4000
     volumes:
-      - ./src/frontend/src:/app/src
-      - ./src/frontend/public:/app/public
-      - ./src/frontend/next.config.ts:/app/next.config.ts:ro
+      - ./src/frontend/src:/app/src/frontend/src
+      - ./src/frontend/public:/app/src/frontend/public
+      - ./src/frontend/next.config.ts:/app/src/frontend/next.config.ts:ro
+      - ./design-system:/app/design-system:ro
     depends_on:
       - backend
       - bff

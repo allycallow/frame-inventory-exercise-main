@@ -32,15 +32,16 @@ export function InventoryList({ active, onEdit }: {
   }
 
   return (
-    <section className="card" aria-label="Inventory frames">
+    <section className="inventory-results" aria-label="Inventory frames">
       <form
-        className="frame-filters"
+        className="card frame-filters"
         role="search"
         aria-label="Filter frames"
         onSubmit={submitSearch}
         onReset={() => setVariables({ page: 0 })}
       >
-        <label className="field frame-search">
+        <h2>Filters</h2>
+        <label className="field">
           Frame ID or town
           <input type="search" name="search" />
         </label>
@@ -70,12 +71,14 @@ export function InventoryList({ active, onEdit }: {
           <button className="button button-secondary" type="reset">Clear filters</button>
         </div>
       </form>
-      <FrameResults
-        active={active}
-        onEdit={onEdit}
-        variables={variables}
-        onPage={(page) => setVariables((current) => ({ ...current, page }))}
-      />
+      <div className="card">
+        <FrameResults
+          active={active}
+          onEdit={onEdit}
+          variables={variables}
+          onPage={(page) => setVariables((current) => ({ ...current, page }))}
+        />
+      </div>
     </section>
   )
 }

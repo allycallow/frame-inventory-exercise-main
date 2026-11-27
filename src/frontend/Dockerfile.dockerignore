@@ -1,0 +1,11 @@
+**
+!src/
+!src/frontend/
+!src/frontend/**
+src/frontend/node_modules
+src/frontend/.next
+src/frontend/.env*
+!design-system/
+!design-system/tokens.css
+!design-system/fonts/
+!design-system/fonts/**
