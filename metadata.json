@@ -1,0 +1,49 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8E7GHRA9SET3XP2ZXG65NRJ",
+  "strategy": "manual-commit",
+  "branch": "alex/glo-41-setup-apollo-react-frontend",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "src/frontend/README.md",
+    "src/frontend/codegen.yml",
+    "src/frontend/package-lock.json",
+    "src/frontend/package.json",
+    "src/frontend/src/app/api/graphql/route.ts",
+    "src/frontend/src/app/inventory-api.ts",
+    "src/frontend/src/app/inventory-import.tsx",
+    "src/frontend/src/app/inventory-list.tsx",
+    "src/frontend/src/app/layout.tsx",
+    "src/frontend/src/generated/graphql.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 93,
+    "cache_creation_tokens": 28936,
+    "cache_read_tokens": 7309073,
+    "output_tokens": 8757,
+    "api_call_count": 31
+  },
+  "redaction": {
+    "replacements": 52,
+    "layers": {
+      "betterleaks": 4,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 38,
+      "credentialed_uri": 0,
+      "entropy": 10,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  }
+}
