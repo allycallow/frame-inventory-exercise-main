@@ -1,0 +1,29 @@
+pick up https://linear.app/upfrontbeats/issue/GLO-48/backend-list-filtering-and-search
+
+---
+
+nice open PR
+
+---
+
+can update the bff also
+
+---
+
+nice merged #28
+
+---
+
+can you pick this work up now https://linear.app/upfrontbeats/issue/GLO-49/frontend-search-by-id-and-add-filters
+
+---
+
+open PR
+
+---
+
+can you change the status to use select
+
+---
+
+chaning the filter does not do anything
