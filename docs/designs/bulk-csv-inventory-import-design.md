@@ -62,6 +62,9 @@ Promote a complete staging attempt in one transaction. Acquire the job lock and 
 
 ### Snapshot apply
 
+The [FULL_SNAPSHOT safety contract](full-snapshot-import-design.md) records the
+reviewed backlog draft for scoped retirement. This section describes the original proposal.
+
 Keep staging outside the inventory lock. During promotion, take a shared transaction-scoped inventory lock for manual writes and DELTA and an exclusive lock for FULL_SNAPSHOT. Obtain frame locks in stable ID order. Evaluate scope membership, watermark checks, and retirement against the protected pre-apply view.
 
 Require scope to be GLOBAL or a canonical country, country/region, or country/region/environment path. Use the explicit snapshot_as_of where available, otherwise derive it from MAX(modified_date) on the complete file. Check freshness and reject watermarks below the greatest committed value for the scope or its ancestors. A broader snapshot can still apply its present rows under the ordinary conflict rules when a descendant has a newer watermark. Protect that entire descendant subtree from retirement.
