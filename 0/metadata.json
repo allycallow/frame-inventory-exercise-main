@@ -1,0 +1,57 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8EFDZJSHZKXZFZ50GC7BBDZ",
+  "session_id": "01a21cef-dad5-7601-9d8c-fd750a199caf",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-27T12:24:40.242016Z",
+  "branch": "alex/glo-62-make-csv-imports-work-with-a-single-docker",
+  "checkpoints_count": 3,
+  "save_step_count": 4,
+  "files_touched": [
+    ".env.example",
+    "README.md",
+    "docker-compose.yml",
+    "justfile",
+    "scripts/compose-up.sh",
+    "src/backend/src/main/java/com/global/ct/frameinventory/inventoryimport/LocalImportIdentity.java",
+    "src/backend/src/test/java/com/global/ct/frameinventory/inventoryimport/LocalImportIdentityTests.java",
+    "src/frontend/README.md",
+    "src/frontend/src/app/inventory-workspace.tsx",
+    "src/frontend/src/app/layout.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "65920083fb0e",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 57,
+    "cache_creation_tokens": 10139,
+    "cache_read_tokens": 1106937,
+    "output_tokens": 1828,
+    "api_call_count": 19
+  },
+  "session_token_usage": {
+    "input_tokens": 229,
+    "cache_creation_tokens": 61713,
+    "cache_read_tokens": 1938486,
+    "output_tokens": 4957,
+    "api_call_count": 39
+  },
+  "redaction": {
+    "replacements": 0,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 4
+  }
+}
