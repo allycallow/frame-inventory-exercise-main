@@ -3,7 +3,7 @@
   "checkpoint_id": "01M8EHS31D04M53HHEG37EEN8S",
   "strategy": "manual-commit",
   "branch": "alex/glo-65-give-frames-and-imports-their-own-routes-frames",
-  "checkpoints_count": 9,
+  "checkpoints_count": 20,
   "files_touched": [
     "src/frontend/src/app/frame-history.tsx",
     "src/frontend/src/app/layout.tsx"
@@ -22,6 +22,13 @@
       "compact_transcript": "/1/transcript.jsonl",
       "content_hash": "/1/content_hash.txt",
       "prompt": "/1/prompt.txt"
+    },
+    {
+      "metadata": "/2/metadata.json",
+      "transcript": "/2/full.jsonl",
+      "compact_transcript": "/2/transcript.jsonl",
+      "content_hash": "/2/content_hash.txt",
+      "prompt": "/2/prompt.txt"
     }
   ],
   "redaction": {
