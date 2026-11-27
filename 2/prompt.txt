@@ -1,0 +1,53 @@
+implement https://linear.app/upfrontbeats/issue/GLO-45/frontend-frame-detail-view
+
+---
+
+can you make the frame view its own route and not a query param
+
+---
+
+nice
+
+---
+
+nice PR ready?
+
+---
+
+nice lets get a PR ready
+
+---
+
+continue
+
+---
+
+merged #32 update tickets
+
+---
+
+nice all done?
+
+---
+
+nice lets tidy up so I can go back into main branch
+
+---
+
+is that not worked merged in?
+
+---
+
+nice clean up and lets get back on main with latest changes from origin
+
+---
+
+lks
+
+---
+
+nice thanks
+
+---
+
+exit
