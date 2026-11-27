@@ -1,9 +1,13 @@
+import { resolve } from 'node:path'
 import type { NextConfig } from 'next'
 
 const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080'
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['127.0.0.1'],
+  turbopack: {
+    root: resolve(import.meta.dirname, '../..'),
+  },
   async rewrites() {
     return {
       fallback: [{ source: '/api/:path*', destination: `${backendUrl}/api/:path*` }],

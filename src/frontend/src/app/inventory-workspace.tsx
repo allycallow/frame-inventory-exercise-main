@@ -50,9 +50,17 @@ export function InventoryWorkspace({ children }: { children: ReactNode }): React
 
   return (
     <InventoryActionsContext.Provider value={actions}>
-      <header className="masthead">
-        <div className="masthead-content">
-          <span className="product">Frame Inventory</span>
+      <div className="workspace">
+        <header className="workspace-rail">
+          <div className="product">
+            <span className="product-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <rect x="3" y="5" width="18" height="14" rx="1" />
+                <path d="M3 9h18" />
+              </svg>
+            </span>
+            Frame Inventory
+          </div>
           <nav aria-label="Inventory navigation">
             <button
               aria-current={area === 'frames' ? 'page' : undefined}
@@ -67,44 +75,44 @@ export function InventoryWorkspace({ children }: { children: ReactNode }): React
               Imports
             </button>
           </nav>
-        </div>
-      </header>
-      <main>
-        <section hidden={area !== 'frames'}>
-          {area === 'frames' && (
-            <>
-              {children}
-              <div hidden={!showList}>
-                {savedFrame && (
-                  <p className="card panel-message frame-saved" role="status">
-                    Frame <strong>{savedFrame.frameId}</strong> was {savedFrame.action}.
-                  </p>
+        </header>
+        <main>
+          <section hidden={area !== 'frames'}>
+            {area === 'frames' && (
+              <>
+                {children}
+                <div hidden={!showList}>
+                  {savedFrame && (
+                    <p className="card panel-message frame-saved" role="status">
+                      Frame <strong>{savedFrame.frameId}</strong> was {savedFrame.action}.
+                    </p>
+                  )}
+                  <InventoryList active={showList} onEdit={(frameId) => setFrameDialog({ frameId })} />
+                </div>
+                {showList && frameDialog && (
+                  <FrameDialog
+                    frameId={frameDialog.frameId}
+                    onClose={() => setFrameDialog(null)}
+                    onSaved={(frameId) => {
+                      setSavedFrame({ frameId, action: frameDialog.frameId === undefined ? 'created' : 'updated' })
+                      setFrameDialog(null)
+                    }}
+                  />
                 )}
-                <InventoryList active={showList} onEdit={(frameId) => setFrameDialog({ frameId })} />
+              </>
+            )}
+          </section>
+          <section hidden={area !== 'imports'}>
+            <div className="page-heading">
+              <div>
+                <h1>Imports</h1>
+                <p className="subtle">Upload inventory CSV files and review import results.</p>
               </div>
-              {showList && frameDialog && (
-                <FrameDialog
-                  frameId={frameDialog.frameId}
-                  onClose={() => setFrameDialog(null)}
-                  onSaved={(frameId) => {
-                    setSavedFrame({ frameId, action: frameDialog.frameId === undefined ? 'created' : 'updated' })
-                    setFrameDialog(null)
-                  }}
-                />
-              )}
-            </>
-          )}
-        </section>
-        <section hidden={area !== 'imports'}>
-          <div className="page-heading">
-            <div>
-              <h1>Imports</h1>
-              <p className="subtle">Upload inventory CSV files and review import results.</p>
             </div>
-          </div>
-          <InventoryImport trackedId={jobId} onTrack={setJobId} />
-        </section>
-      </main>
+            <InventoryImport trackedId={jobId} onTrack={setJobId} />
+          </section>
+        </main>
+      </div>
     </InventoryActionsContext.Provider>
   )
 }
