@@ -1,0 +1,17 @@
+merged  #27
+
+---
+
+updat linear board
+
+---
+
+pick up https://linear.app/upfrontbeats/issue/GLO-42/frontend-add-a-frame when ready
+
+---
+
+nice open PR
+
+---
+
+merged #29
