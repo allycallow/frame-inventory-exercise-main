@@ -3,11 +3,44 @@
   "checkpoint_id": "01M8E4YZXEW5AGR0P8DV3X5CNY",
   "strategy": "manual-commit",
   "branch": "alex/glo-36-run-delta-imports-with-python-worker",
-  "checkpoints_count": 18,
+  "checkpoints_count": 24,
   "files_touched": [
+    "README.md",
+    "data/import-cases/01-baseline.csv",
+    "data/import-cases/02-newer-update.csv",
+    "data/import-cases/03-stale-update.csv",
+    "data/import-cases/04-timestamp-collision.csv",
+    "data/import-cases/README.md",
+    "data/import-cases/duplicate-frame-ids.csv",
+    "data/import-cases/header-only.csv",
+    "data/import-cases/invalid-header.csv",
+    "data/import-cases/mixed-valid-and-invalid.csv",
+    "data/import-cases/quoted-multiline.csv",
+    "docker-compose.yml",
+    "docs/designs/bulk-csv-inventory-import-design.md",
+    "infra/inventory-import/README.md",
+    "src/README.md",
     "src/backend/README.md",
+    "src/backend/src/main/java/com/global/ct/frameinventory/inventoryimport/CsvImportActivities.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/inventoryimport/CsvImportWorkerConfiguration.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/inventoryimport/CsvImportWorkflow.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/inventoryimport/ImportGrpcService.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/inventoryimport/ImportProcessing.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/inventoryimport/ImportWorkerGrpcService.java",
+    "src/backend/src/main/proto/frameinventory/v1/import_worker.proto",
+    "src/backend/src/test/java/com/global/ct/frameinventory/inventoryimport/ImportProcessingTests.java",
+    "src/bff/README.md",
     "src/bff/src/index.ts",
-    "src/frontend/README.md"
+    "src/frontend/README.md",
+    "src/frontend/next.config.ts",
+    "src/workflows/.gitignore",
+    "src/workflows/Dockerfile",
+    "src/workflows/README.md",
+    "src/workflows/inventory_workflows/__init__.py",
+    "src/workflows/inventory_workflows/__main__.py",
+    "src/workflows/inventory_workflows/activities.py",
+    "src/workflows/inventory_workflows/workflow.py",
+    "src/workflows/pyproject.toml"
   ],
   "sessions": [
     {
@@ -37,24 +70,31 @@
       "compact_transcript": "/3/transcript.jsonl",
       "content_hash": "/3/content_hash.txt",
       "prompt": "/3/prompt.txt"
+    },
+    {
+      "metadata": "/4/metadata.json",
+      "transcript": "/4/full.jsonl",
+      "compact_transcript": "/4/transcript.jsonl",
+      "content_hash": "/4/content_hash.txt",
+      "prompt": "/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 142,
-    "cache_creation_tokens": 26384,
-    "cache_read_tokens": 214306,
-    "output_tokens": 1089,
-    "api_call_count": 10
+    "input_tokens": 901,
+    "cache_creation_tokens": 251854,
+    "cache_read_tokens": 24377227,
+    "output_tokens": 61798,
+    "api_call_count": 186
   },
   "redaction": {
-    "replacements": 141,
+    "replacements": 191,
     "layers": {
-      "betterleaks": 2,
+      "betterleaks": 6,
       "connection_string": 0,
       "credential_key": 0,
-      "credential_value": 87,
+      "credential_value": 123,
       "credentialed_uri": 0,
-      "entropy": 52,
+      "entropy": 62,
       "key_context": 0,
       "provider_token": 0,
       "shell_stdin": 0
