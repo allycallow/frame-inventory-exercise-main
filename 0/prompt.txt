@@ -1,0 +1,197 @@
+lets pick this work back up https://linear.app/upfrontbeats/issue/GLO-26/epic-bulk-csv-inventory-import
+
+---
+
+I do not have an existing identity provider. Lets park this work. Authentication is a bigger topic I want to pick after this work is completed. Want to be able to do an e2e before implementing authentication
+
+---
+
+whats the local operator token
+
+---
+
+can we add to .env INVENTORY_IMPORT_LOCAL_TOKEN
+
+---
+
+I get Local imports are disabled
+
+---
+
+lets get the main  docker-compose.yml  working I do not see temporal starting either
+
+---
+
+can we move the temporal worker code into src/workflows and convert to python
+
+---
+
+can you create me some more csv to test different caes
+
+---
+
+nice just tested all import-cases works great
+
+---
+
+can open a PR for this work now and update any relevant tickets
+
+---
+
+merged #26
+
+---
+
+Give me a list of whats left to complete this wokr
+
+---
+
+can move authorization work to a follow up ticket so we can finish this epic
+
+---
+
+lets chat about 1.
+
+---
+
+can you give me a bit more detail
+
+---
+
+what are the options
+
+---
+
+what do you think is best?
+
+---
+
+nice lets go with a trusted exporter with a manifest
+
+---
+
+what are the options?
+
+---
+
+what do you suggest?
+
+---
+
+lets go with that.
+
+---
+
+what are the options?
+
+---
+
+what do you suggest
+
+---
+
+lets go with that
+
+---
+
+what are the options?
+
+---
+
+what do you suggest?
+
+---
+
+nice lets go with that
+
+---
+
+what are the options?
+
+---
+
+what do you suggest?
+
+---
+
+nice lets go with that
+
+---
+
+what are the options?
+
+---
+
+what do you suggest?
+
+---
+
+lets go with that
+
+---
+
+what are the options?
+
+---
+
+lets do that
+
+---
+
+what are the options
+
+---
+
+lets go with that
+
+---
+
+what are the options?
+
+---
+
+what do you suggest?
+
+---
+
+lets go for that
+
+---
+
+what are the options?
+
+---
+
+what do you suggest
+
+---
+
+nice lets go with that
+
+---
+
+Goldfish review of the contract
+
+---
+
+what are the options?
+
+---
+
+what do you suggest?
+
+---
+
+nice lets go with that
+
+---
+
+what are the options?
+
+---
+
+what do you suggest?
+
+---
+
+lets go for that. Makes sense
