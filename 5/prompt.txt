@@ -1,0 +1,17 @@
+$govuk-style README.md
+
+---
+
+can you add a flow diagram in the readme
+
+---
+
+this needs to be update The exercise offered PostgreSQL should be The exercise offered MariaDb
+
+---
+
+its missing the sqs in the diagram
+
+---
+
+also can you update the read to include sqs and dlq
