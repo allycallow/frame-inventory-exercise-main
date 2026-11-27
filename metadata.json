@@ -3,7 +3,7 @@
   "checkpoint_id": "01M8E8YKQE4TPN5BS32AG4D73Y",
   "strategy": "manual-commit",
   "branch": "alex/glo-49-frontend-search-by-id-and-add-filters",
-  "checkpoints_count": 6,
+  "checkpoints_count": 9,
   "files_touched": [
     "src/frontend/src/app/globals.css",
     "src/frontend/src/app/inventory-list.graphql",
@@ -24,24 +24,31 @@
       "compact_transcript": "/1/transcript.jsonl",
       "content_hash": "/1/content_hash.txt",
       "prompt": "/1/prompt.txt"
+    },
+    {
+      "metadata": "/2/metadata.json",
+      "transcript": "/2/full.jsonl",
+      "compact_transcript": "/2/transcript.jsonl",
+      "content_hash": "/2/content_hash.txt",
+      "prompt": "/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 48,
-    "cache_creation_tokens": 3554,
-    "cache_read_tokens": 3317831,
-    "output_tokens": 2645,
-    "api_call_count": 16
+    "input_tokens": 144,
+    "cache_creation_tokens": 32566,
+    "cache_read_tokens": 6705725,
+    "output_tokens": 10302,
+    "api_call_count": 48
   },
   "redaction": {
-    "replacements": 52,
+    "replacements": 54,
     "layers": {
       "betterleaks": 4,
       "connection_string": 0,
       "credential_key": 0,
       "credential_value": 38,
       "credentialed_uri": 0,
-      "entropy": 10,
+      "entropy": 12,
       "key_context": 0,
       "provider_token": 0,
       "shell_stdin": 0
