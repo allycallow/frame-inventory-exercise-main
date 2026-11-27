@@ -1,0 +1,48 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8ECTN9V1HBE86SPTPATTSZX",
+  "session_id": "01a21cb8-ee03-7fc2-b22d-97011f4a31b4",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-27T11:39:11.766093Z",
+  "branch": "alex/glo-34-document-full-snapshot",
+  "checkpoints_count": 3,
+  "save_step_count": 1,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "f6396be09c79",
+  "checkpoint_transcript_start": 298,
+  "transcript_lines_at_start": 298,
+  "compact_transcript_start": 71,
+  "token_usage": {
+    "input_tokens": 234,
+    "cache_creation_tokens": 50426,
+    "cache_read_tokens": 9382467,
+    "output_tokens": 14161,
+    "api_call_count": 78
+  },
+  "session_token_usage": {
+    "input_tokens": 451,
+    "cache_creation_tokens": 144408,
+    "cache_read_tokens": 12003776,
+    "output_tokens": 23650,
+    "api_call_count": 113
+  },
+  "redaction": {
+    "replacements": 0,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 4
+  }
+}
