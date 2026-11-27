@@ -1,389 +1,454 @@
 # Frame Inventory
 
-Application for the frame-inventory take-home exercise.
+Use Frame Inventory to add and edit frames, import inventory from a CSV file,
+and see which fields changed between versions. You can also search for frames,
+filter them by status and open each frame's detail page.
 
-## System Overview
+[Exercise requirements](./INSTRUCTIONS.md) · [Sample inventory export](./data/inventory_frame.csv)
 
-Next.js serves the inventory and import workspace. It sends GraphQL requests through a same-origin route to the BFF, which calls Spring Boot over gRPC. Docker Compose runs these services alongside PostgreSQL, Temporal, a local S3/SQS emulator, Prometheus, Grafana, Loki, Alloy, and the OpenTelemetry Collector. The exercise provides a legacy export in `data/inventory_frame.csv` and describes the inventory features in `INSTRUCTIONS.md`.
+## Run the application locally
 
-Bring the whole stack up with one command.
+From the repository root, run the following command to build and start the
+stack. You can run it without an `.env` file or with a copy of `.env.example`.
 
 ```bash
 docker compose up --build
 ```
 
-Once PostgreSQL is healthy, the backend applies pending Flyway migrations during startup.
-You can start the stack with no `.env` or with a copy of `.env.example`.
-Open `/frames` to browse inventory or `/imports` to upload a CSV. The root URL
-redirects to `/frames`. Bookmark `/imports/<jobId>` to reopen an import job and
-enter the local operator token to see its results. If imports are disabled, the
-Imports page explains how to enable them.
+Once PostgreSQL is ready, the backend applies pending Flyway migrations. Open the
+frame list to browse the inventory. The root URL redirects to `/frames`.
+[Local frame list](http://localhost:3000/frames)
 
-If you have `just` installed, run `just` to list the available recipes.
+To upload a CSV, start the stack with a local import token and open `/imports`.
+The Imports page tells you how to enable uploads if they are disabled. Bookmark
+`/imports/<jobId>` to reopen a job and enter the token to see its results.
+[CSV import smoke test](#csv-import)
 
-| Command | Purpose |
-|---------|---------|
-| `just up` | Generate a local import token if needed, then build and start the stack. |
-| `just down` | Stop the stack and retain its named data volumes. |
-| `just compose logs -f backend` | Pass arguments through to Docker Compose. |
-| `just migrate` | Run Flyway on its own in a one-off backend container. |
+If you have `just` installed, run `just` to list the available commands.
 
-## Subdirectories & System Boundaries
+| Command | What it does |
+| --- | --- |
+| `just up` | Creates a local import token if needed, then builds and starts the stack. |
+| `just down` | Stops the stack and keeps its named data volumes. |
+| `just compose logs -f backend` | Passes arguments to Docker Compose, in this case to follow the backend logs. |
+| `just migrate` | Runs Flyway in a one-off backend container. |
 
-- [Application source](./src/README.md) contains the Spring Boot backend, Apollo Server BFF, and Next.js frontend.
-- [Design system](./design-system/README.md) contains the prototype, sample frame data, and visual conventions for the exercise.
-- [Design documents](./docs/designs/) cover the inventory schema, frame management API, and CSV import.
+## Repository contents
 
-## Design Decisions & Trade-offs
+The repository contains the application, the design system and the design
+documents.
 
-### Scope
+- [application source](./src/README.md) for the Spring Boot backend, Apollo Server and Next.js frontend
+- [design system](./design-system/README.md) with the prototype, sample frame data and visual conventions
+- [design documents](./docs/designs/) for the inventory schema, frame management API and CSV import
 
-All four required features are delivered: add a frame, edit a frame, bulk CSV
-upload, and version history. Search, status filtering, and a frame detail view
-were added on top. Version history shows field-level changes between consecutive
-versions. Change authorship and `FULL_SNAPSHOT` imports remain [follow-ups](#follow-ups).
+## Services
 
-### Datastore: PostgreSQL instead of MongoDB
+Docker Compose starts these services and publishes the listed host ports.
+The BFF shares the backend's network, so the backend publishes port 4000.
 
-The exercise offered MongoDB or PostgreSQL. I chose PostgreSQL because the
-import depends on set-based SQL that a document
-store would make much harder:
+| Service | Host port | Container port | What it does |
+| --- | --- | --- | --- |
+| `frontend` | 3000 | 3000 | Serves the Next.js workspace and its same-origin GraphQL route. |
+| `bff` | 4000 | 4000 | Serves Apollo Sandbox and the inventory GraphQL API. |
+| `backend` | 8080, 9090 | 8080, 9090 | Runs Spring Boot and serves `GET /api/health` and the gRPC API. |
+| `postgres` | 5432 | 5432 | Stores the inventory schema that Spring Boot applies through Flyway. |
+| `aws` | 4566 | 4566 | Emulates Amazon S3 and Amazon SQS, including the import queue and its dead-letter queue. |
+| `temporal` | 7233, 8233 | 7233, 8233 | Serves the Temporal gRPC API and web interface. |
+| `workflows` | | | Runs the Python Temporal worker for `DELTA` imports. |
+| `prometheus` | 9091 | 9090 | Scrapes Spring Boot and Apollo metrics every 15 seconds. |
+| `otel-collector` | 9464 | 9464 | Exposes Spring Boot metrics for local inspection. |
+| `grafana` | 3001 | 3000 | Queries the configured Prometheus and Loki data sources. |
+| `loki` | | | Stores backend and BFF logs. |
+| `alloy` | | | Collects container logs and sends them to Loki. |
 
-- Rows stream into `UNLOGGED` staging tables keyed by job, attempt, and row
-  number. They are cheap to write and are discarded after the apply.
-- One transaction compares every staged row with the current version, decides
-  each outcome, and then upserts lookups with `INSERT … ON CONFLICT`. It closes
-  the replaced versions with `UPDATE … FROM`, inserts new versions with
-  `jsonb_populate_record`, and records row errors.
-- Partial unique indexes, `CHECK` constraints, row locks, and advisory locks
-  enforce the versioning invariants inside the database.
+Compose creates named volumes for PostgreSQL, Prometheus, Grafana, Loki and
+Alloy. [Docker Compose configuration](./docker-compose.yml)
 
-The trade-off is a fixed relational schema and migrations. The frame shape from
-the legacy export is stable and relational, so that is a good fit.
+### Local credentials
 
-### Domain model: versioned rows are the audit trail
+| Service | User | Password | Database |
+| --- | --- | --- | --- |
+| PostgreSQL | `app` | `app` | `frames` |
+| Grafana | `admin` | `admin` | |
 
-Each frame has a stable identity in `frame` and an append-only history in
-`frame_version`. Every version carries `valid_from`/`valid_to`, and a partial
-unique index enforces at most one current version per frame. An edit or an
-import closes the current row and inserts a new one. A delete closes the row
-without a successor, and `closed_by_change_source` records why.
+## Design decisions
 
-- **Why:** history is the same data the application reads, so the audit trail
-  cannot drift from the inventory. Database constraints, not just application
-  code, enforce the invariants.
-- **Cost:** every change copies the whole row, and "what changed" must be
-  derived by comparing consecutive versions.
-- Location (country → region → town → postcode) and format are normalised into
-  lookup tables. External references (Broadsign, pricing) and linked frames are
-  versioned child tables rather than JSON, so they stay queryable.
+### How services communicate
+
+Amazon S3 sends a notification to the Amazon SQS queue when a CSV upload
+finishes. The Spring Boot dispatcher reads the notification and starts the
+Temporal workflow.
+
+```mermaid
+flowchart TD
+    accTitle: Inventory and CSV import flows
+    accDescr: Inventory requests go through Next.js and Apollo to Spring Boot and PostgreSQL. Amazon S3 sends upload notifications to the Amazon SQS queue. Spring Boot reads the queue and starts a Temporal workflow. SQS moves messages that reach the retry limit to the dead-letter queue for Spring Boot to check. The Python worker calls Spring Boot to stage and apply the import.
+
+    Browser["Browser"]
+    Frontend["Next.js"]
+    BFF["Apollo BFF"]
+    Backend["Spring Boot"]
+    Database[("PostgreSQL")]
+    Storage[("Amazon S3")]
+    Queue["Amazon SQS import queue"]
+    DeadLetterQueue["Amazon SQS dead-letter queue (DLQ)"]
+    Temporal["Temporal"]
+    Worker["Python worker"]
+
+    Browser -->|"Browse and edit frames, request an upload URL, check import status"| Frontend
+    Frontend -->|"GraphQL"| BFF
+    BFF -->|"gRPC"| Backend
+    Backend -->|"Read and write inventory and import data"| Database
+    Browser -->|"Upload CSV using a presigned URL"| Storage
+    Storage -->|"Object created notification"| Queue
+    Queue -->|"Spring Boot dispatcher reads the message"| Backend
+    Queue -->|"Move messages that reach the retry limit"| DeadLetterQueue
+    DeadLetterQueue -->|"Spring Boot checks whether dispatch succeeded"| Backend
+    Backend -->|"Start import workflow"| Temporal
+    Temporal -->|"Dispatch workflow tasks"| Worker
+    Worker -->|"Call Stage and Apply over gRPC"| Backend
+    Backend -->|"Read CSV during Stage"| Storage
+```
+
+Next.js serves the inventory and import workspace. Its `/api/graphql` route
+forwards requests to the Apollo backend for the frontend (BFF). Compose sets
+`BFF_URL` to `http://bff:4000`. Next.js forwards other `/api/` requests to
+`BACKEND_URL`, keeping the path intact. Compose sets that URL to
+`http://backend:8080`. [Next.js rewrites](./src/frontend/next.config.ts)
+[Docker Compose configuration](./docker-compose.yml)
+
+The workspace loads the first page of frames when you open it. When you upload
+a CSV, the browser sends the file straight to S3 using a signed URL from the
+BFF.
+
+GraphQL gives the frontend an API shaped around its screens. The BFF calls
+Spring Boot over gRPC, which gives the services a typed contract and keeps
+inventory rules in Spring Boot.
+
+gRPC sends compact Protobuf messages and shares long-lived HTTP/2 connections
+across calls. This reduces overhead compared with JSON over HTTP/1.1. Server
+streaming lets `Stage` report progress while the backend reads a large CSV.
+
+The `.proto` files define the contract. They generate Java code for Spring Boot,
+TypeScript for the BFF and Python for the import worker. Code generation helps
+catch incompatible contract changes during builds. gRPC deadlines, status
+codes and metadata give services a consistent way to handle timeouts, errors
+and correlation IDs.
+
+The BFF adds a network call and a GraphQL schema (`.gql`) to keep in step with
+the Protobuf schema. Generating code from both schemas helps keep them aligned.
+The BFF also lets the browser use GraphQL because browsers cannot call native
+gRPC directly. Use a tool such as `grpcurl` to inspect binary messages.
+
+### PostgreSQL and version history
+
+The exercise offered MariaDB and MongoDB. I chose PostgreSQL because it can
+compare and update batches of imported rows in SQL.
+The legacy export has a stable relational structure, which suits a fixed
+schema managed through migrations.
+
+Each frame has a stable identity in `frame` and a history in `frame_version`.
+Each version records `valid_from` and `valid_to`. A partial unique index
+allows at most one current version for each frame. An edit or import closes
+the current version and adds a new one. A delete closes the version, and
+`closed_by_change_source` records why it closed.
+
+The application reads the same versions that make up the audit trail. Partial
+unique indexes, `CHECK` constraints, row locks and advisory locks enforce
+versioning rules in the database. Each change copies the full row. The history
+view compares consecutive versions to show which fields changed.
+
+Lookup tables store formats and the location hierarchy of country, region,
+town and postcode. Versioned child tables keep Broadsign references, pricing
+references and links to other frames queryable.
 
 ### Concurrent edits
 
-An edit sends the version it started from. The backend locks the frame row and
-rejects the edit if a newer version exists, and the UI offers to reload the
-latest version. A shared transaction-scoped lock is already taken by every
-writer so that a future full-snapshot import can take it exclusively.
+Each edit includes the version it started from. The backend locks the frame
+row and rejects the edit if a newer version exists. The interface then offers
+to reload the latest version.
 
-### Service boundaries: Next.js → GraphQL BFF → Spring Boot gRPC
+Every writer takes a shared lock for its transaction. A future full snapshot
+import can take that lock exclusively.
 
-- **Why:** the frontend gets a GraphQL API shaped around its screens, the
-  backend keeps a strict typed contract, and domain logic lives in one place.
-- **Cost:** an extra network hop and two schemas (`.proto` and `.gql`) to keep
-  in step. Code generation on both sides limits drift.
+### Inventory search
 
-### Search: native PostgreSQL instead of OpenSearch
+PostgreSQL searches current versions for a case-insensitive substring in the
+frame ID or town. You can also filter the results by status. I removed
+OpenSearch from the exercise scaffold because the search requirements and time
+available did not justify a second data store and a pipeline to keep it in
+sync.
 
-Search and filtering use plain PostgreSQL queries over current versions. Search
-is a case-insensitive substring match on frame ID or town, with an optional
-status filter. The original scaffold included OpenSearch, and I removed it.
-Within the time box, it added complexity that basic ID search and filters did
-not justify. At this inventory size a second datastore adds a sync pipeline,
-consistency questions, and another service to run, without improving the user
-experience.
+The leading wildcard in the `ILIKE` query prevents PostgreSQL from using a
+B-tree index, so it scans current rows. This is sufficient for about 1,000
+frames. A `pg_trgm` index would be the next step and would run in PostgreSQL.
 
-- **Cost:** a leading-wildcard `ILIKE` cannot use a B-tree index, so search
-  scans current rows. That is fine at ~1,300 frames. The next step is a
-  `pg_trgm` index, which still needs no new infrastructure.
-- **If search outgrew PostgreSQL:** I would stream changes into OpenSearch with
-  Kafka change data capture from `frame_version`, so the index follows committed
-  writes without dual writes in the application. A scheduled Prefect flow would
-  reconcile the index against PostgreSQL and repair drift.
+If search outgrew PostgreSQL, I would use Kafka change data capture to stream
+committed changes from `frame_version` into OpenSearch. The application would
+still write to PostgreSQL alone. A scheduled Prefect flow would compare the
+search index with PostgreSQL and correct any differences.
 
-### CSV import: offloaded, retry-safe, and heavier than this file needs
+### CSV import pipeline
 
-The browser uploads directly to S3 with a presigned URL. The S3 notification
-goes to SQS, and Spring Boot starts a Temporal workflow. A Python worker
-orchestrates the workflow and calls the backend's `Stage` and `Apply` RPCs.
-`Stage` streams the CSV from S3, validates each row, and inserts rows into
-staging tables in batches of 200. `Apply` then validates and applies them in one
-SQL transaction.
+The browser uploads the CSV directly to S3 using a presigned URL. S3 sends a
+notification to SQS, and Spring Boot starts a Temporal workflow. A Python
+worker runs the workflow and calls the backend's `Stage` and `Apply` gRPC
+methods.
 
-- **Why:**
-  - The upload never passes through the API. S3 receives the file, and parsing
-    runs asynchronously in the workflow rather than in a user request.
-  - The file is streamed rather than loaded into memory.
-  - Temporal retries each step, and the apply is idempotent. Replaying the same
-    file creates no new versions, and a retried attempt cannot apply twice.
-- **Why it is fast:** the database work is set-based rather than row by row.
-  - Staging uses batched inserts into `UNLOGGED` tables, which skip the
-    write-ahead log.
-  - The apply runs a fixed number of SQL statements whatever the file size, so
-    there are no per-row round trips.
-  - Each distinct location and format is resolved once.
-  - Rows whose content is unchanged are skipped without writing a new version.
-- **Limits:** the backend accepts files up to 10 MiB and 10,000 rows. Larger
-  files would need the limits raised and the apply measured, because it runs as
-  one transaction.
-- **Trade-off:** for the supplied ~1,300-row file, an HTTP upload parsed
-  in-process and applied with the same staging SQL would be enough, with far
-  fewer moving parts. I chose the production-shaped pipeline deliberately and
-  accept the extra local infrastructure.
-- **Conflict rules:**
-  - A newer source timestamp creates a version.
-  - The same timestamp with the same content changes nothing.
-  - An older timestamp, or the same timestamp with different content, is
-    rejected unless the operator chooses force overwrite.
-  - Invalid rows are rejected individually, and valid rows still apply.
-  - Manual edits are stamped with the current time, so an older export cannot
-    silently undo them.
+#### SQS retries and the dead-letter queue
 
-### `FULL_SNAPSHOT` imports: designed, not built
+S3 sends upload notifications to `inventory-import`. Spring Boot acknowledges
+each message after it handles all applicable records. If dispatch fails, SQS
+allows up to 5 receives before moving the message to `inventory-import-dlq`,
+the dead-letter queue (DLQ).
 
-A snapshot import would retire frames that are missing from the file. That is
-risky enough to need safety checks: a retirement circuit breaker, a malformed-row
-threshold, and per-scope watermarks. The design is in
-[docs/designs](./docs/designs/full-snapshot-import-design.md), and the API
-rejects the mode until those checks exist.
+Spring Boot also reads the DLQ. It checks whether Temporal already started the
+workflow and preserves the job if it finds an execution. If Temporal confirms
+there is no execution, Spring Boot can mark the job as failed. For jobs already
+bound to an uploaded object, it waits until the dispatch deadline.
+[Local SQS dispatch settings](./src/backend/README.md#local-sqs-dispatch)
 
-### Observability
+#### Staging and applying rows
 
-Prometheus, Grafana, Loki, and the OpenTelemetry Collector provide dashboards,
-metrics, and centralised logs with correlation IDs. Business metrics include
-frame creates, updates, soft deletes, and import outcomes. The stack is the
-foundation for alerting, but no alert rules are configured yet.
+`Stage` streams the CSV from S3 outside the user's request and validates each
+row as it reads it. It writes batches of 200 rows to `UNLOGGED` staging
+tables, keyed by job, attempt and row number. These tables skip the
+write-ahead log and hold the rows until the apply step finishes.
 
-### Local-only shortcuts
+`Apply` validates the staged data and compares it with current versions in one
+transaction. It updates lookup tables with `INSERT … ON CONFLICT`, closes
+replaced versions with `UPDATE … FROM` and inserts new versions with
+`jsonb_populate_record`. It also records row errors. The transaction uses a
+fixed number of SQL statements, so it avoids a separate database call for
+each row. It resolves each distinct location and format once and skips
+unchanged rows.
 
-Import authentication is a shared local token that the backend accepts only
-over loopback from the co-located BFF. It is not production authentication.
+Temporal retries each step. Re-uploading an unchanged file creates no new
+versions, and a retried attempt cannot apply twice.
+
+The backend accepts files up to 10 MiB and 10,000 rows. To support larger files,
+raise the limits and measure how long the apply transaction takes. For the
+supplied 1,000-row file, an HTTP handler could parse the upload in the
+application and apply it with the same staging SQL. I chose the workflow to
+exercise the production design, which requires more services locally.
+
+#### Import conflict rules
+
+The backend uses source timestamps and row content to decide what to do.
+
+- A newer timestamp creates a version.
+- The same timestamp and content leave the current version unchanged.
+- An older timestamp or different content with the same timestamp requires the operator to choose force overwrite.
+- The backend rejects invalid rows individually and still applies valid rows.
+- Manual edits use the current time, so an older export cannot silently undo them.
+
+#### Full snapshot imports
+
+A `FULL_SNAPSHOT` import would retire frames missing from the file. The design
+limits how many frames an import can retire and sets a threshold for malformed
+rows. It also tracks the latest snapshot for each scope. The API rejects the
+mode until these checks are in place.
+[Full snapshot import design](./docs/designs/full-snapshot-import-design.md)
+
+#### Local import access
+
+The BFF and the backend share a local import token. The backend accepts it only
+from the BFF over loopback.
+
+### Metrics and logs
+
+Prometheus, Grafana, Loki and the OpenTelemetry Collector provide dashboards,
+metrics and centralised logs with correlation IDs. Inventory metrics cover
+frame creation, edits, soft deletes and import outcomes. Alert rules are a
+[follow-up](#follow-ups).
 
 ### Working with AI
 
-I tracked the work on a Linear board. Each feature, fix, and follow-up has a
-ticket with acceptance criteria, and each ticket maps to a branch
-(`alex/glo-<n>-…`) and a pull request. Commits reference their ticket. I broke
-the work into small, independent tickets and used multiple agents to implement
-them, each on its own ticket branch. I reviewed every change against the
-ticket's acceptance criteria before merging. GitHub Copilot code review acted
-as a second reviewer on pull requests across the backend, BFF, observability,
-and import pipeline work. I triaged its comments, applying some and declining
-others. The open backlog is the source of
-the [Follow-ups](#follow-ups) below.
+I tracked features, fixes and follow-ups on a Linear board. Each ticket has
+acceptance criteria and maps to a branch (`alex/glo-<n>-…`) and a pull request.
+Commits reference their tickets.
 
-I wrote a design document before each significant piece of work and used the
-Elephant–Goldfish Model (EGM) to review it. Reviewers with fresh context
-examined each document through separate lenses, such as design, implementation
-readiness, and simplicity, before I implemented anything. Open questions and
-rejected alternatives are recorded in the documents. See, for example,
-[the bulk CSV import design](./docs/designs/bulk-csv-inventory-import-design.md)
-and its *Alternatives Considered* section.
+I split the work into small, independent tickets and assigned each agent its
+own ticket branch. I checked every change against the acceptance criteria
+before merging. GitHub Copilot provided a second review for pull requests on
+the backend, BFF, monitoring and import pipeline. I reviewed its comments and
+decided which changes to apply. The open tickets form the [follow-up list](#follow-ups).
 
-Each commit links to the captured Codex session through an
-`Entire-Checkpoint:` trailer. Entire stores the sessions as Git refs under
-`refs/entire/checkpoints/` rather than on a branch. Fetch them with
+Before starting significant work, I wrote a design document and reviewed it
+using the Elephant–Goldfish Model (EGM). Reviewers with fresh context assessed
+the design, readiness to implement and opportunities to simplify. The
+documents record open questions and alternatives I considered.
+[Alternatives considered for bulk CSV import](./docs/designs/bulk-csv-inventory-import-design.md#alternatives-considered)
+
+The `Entire-Checkpoint:` trailer links a commit to its Codex session. Entire
+stores sessions as Git refs under `refs/entire/checkpoints/`. To fetch them, run
 `git fetch origin 'refs/entire/*:refs/entire/*'`.
 
 ### Follow-ups
 
-- **Authentication and authorisation:** replace the local import token with real
-  user authentication and role-based permissions for editing and importing.
-  Record the acting user on each `frame_version` so history shows who made each
-  change.
-- **`FULL_SNAPSHOT` imports:** implement the documented design, including
-  scoped retirement guards, scope ordering, and replay protection.
-- **Feature flags and progressive delivery:** release risky changes such as
-  `FULL_SNAPSHOT` behind flags. Enable them per environment or import scope,
-  widen the rollout gradually, and turn them off without a redeploy.
-- **Prefect reconciliation:** schedule flows that compare derived data, such as
-  a future search index, against PostgreSQL and repair drift.
-- **Observability:** add Grafana alert rules for import failures, stuck jobs,
-  and error rates. Add distributed tracing with Grafana Tempo and more business
-  metrics from the Temporal workflow.
-- **CI:** run each GitHub Actions workflow only when its part of the repository
-  changes.
+The remaining work covers access, imports, data checks, monitoring and builds.
 
-## Services
+- add user sign-in and role-based permissions for editing and importing, and record the user on each `frame_version`
+- implement `FULL_SNAPSHOT` imports, including retirement limits, ordering within each scope and replay protection
+- use feature flags to enable changes such as `FULL_SNAPSHOT` by environment or import scope, expand the rollout in stages and turn changes off without redeploying
+- schedule Prefect flows to compare derived data, such as a future search index, with PostgreSQL and correct differences
+- add Grafana alerts for failed imports, stuck jobs and error rates, plus distributed tracing with Grafana Tempo and more metrics from Temporal
+- run each GitHub Actions workflow only when its part of the repository changes
 
-`docker compose up` starts the following services.
+## Verify the application
 
-| Service               | Host port | Container port | Notes                                                  |
-|-----------------------|-----------|----------------|--------------------------------------------------------|
-| frontend              | 3000      | 3000           | Next.js workspace and same-origin GraphQL route     |
-| bff                   | 4000      | 4000           | Apollo Sandbox and the frame inventory GraphQL API     |
-| backend               | 8080      | 8080           | Spring Boot, exposes `GET /api/health`                 |
-| postgres              | 5432      | 5432           | Spring Boot applies the inventory schema via Flyway    |
-| aws                   | 4566      | 4566           | Local S3 and SQS for CSV imports                      |
-| temporal              | 7233, 8233 | 7233, 8233    | Temporal gRPC and web UI                              |
-| workflows             |           |              | Python Temporal worker for DELTA imports              |
-| prometheus            | 9091      | 9090           | Scrapes Spring Boot and Apollo metrics every 15 seconds |
-| otel-collector        | 9464      | 9464           | Scrapes Spring Boot metrics for local inspection       |
-| grafana               | 3001      | 3000           | Queries provisioned Prometheus and Loki data            |
-
-### Credentials
-
-| Service               | User       | Password       | Database         |
-|-----------------------|------------|----------------|------------------|
-| postgres              | `app`      | `app`          | `frames`         |
-| grafana               | `admin`    | `admin`         | n/a              |
-
-## Global Invariants
-
-- The Next.js rewrite preserves the `/api/` path and uses `BACKEND_URL` as its destination origin. Compose sets it to `http://backend:8080`. `[src/frontend/next.config.ts:rewrites]` `[docker-compose.yml:services.frontend.environment.BACKEND_URL]`
-- The Next.js `/api/graphql` route proxies GraphQL to `BFF_URL`. Compose sets it to `http://bff:4000`.
-
-## Global Side Effects
-
-- Opening the frontend loads the first page of frames. Starting an import uploads the file directly to S3 using the signed URL returned by the BFF.
-- Docker Compose publishes service ports and creates named volumes for PostgreSQL, Prometheus, Grafana, Loki, and Alloy. `[docker-compose.yml:services]` `[docker-compose.yml:volumes]`
-
-## System Verification
-
-- From `src/backend`, run `./gradlew test`.
-- From `src/frontend`, run `npm run lint` after installing dependencies.
+Run `./gradlew test` from `src/backend`. From `src/frontend`, install the
+dependencies and run `npm run lint`.
 
 ### Git hooks
 
-Install [pre-commit](https://pre-commit.com/#installation), then run `pre-commit install`
-from the repository root to install both Git hooks. The `pre-commit` hook checks
-YAML, JSON, and merge conflict markers, and runs ESLint when staged changes touch
-`src/frontend/`. Install the frontend dependencies with `npm ci --prefix src/frontend`
-before committing frontend changes.
+Install pre-commit, then run `pre-commit install` from the repository root to
+install both Git hooks. [pre-commit installation guide](https://pre-commit.com/#installation)
 
-The `commit-msg` hook uses Commitlint to enforce the Conventional Commits format
-documented in [AGENTS.md](./AGENTS.md). Commitlint requires Node.js 22.12 or newer.
+The `pre-commit` hook checks YAML, JSON and merge conflict markers. It runs
+ESLint when staged changes touch `src/frontend/`. Before committing frontend
+changes, install the frontend dependencies with `npm ci --prefix src/frontend`.
+
+The `commit-msg` hook uses Commitlint to check the Conventional Commits format.
+Commitlint requires Node.js 22.12 or newer. [Repository commit guidelines](./AGENTS.md)
 
 Run `pre-commit run --all-files` to check the whole repository.
 
 ### Smoke test
 
-Once the stack is up, check the service entry points.
+After the stack starts, check the frontend, backend and GraphQL API.
 
-- Open <http://localhost:3000> to view the frame list.
-- Hit the backend directly: <http://localhost:8080/api/health>.
-- Open [Apollo Sandbox](http://127.0.0.1:4000) and run the [frame list query](./src/bff/README.md).
+- Open the [frame list](http://localhost:3000).
+- Check the [backend health endpoint](http://localhost:8080/api/health).
+- Run the frame list query in Apollo Sandbox. [Frame list query](./src/bff/README.md) · [Apollo Sandbox](http://127.0.0.1:4000)
 
 #### CSV import
 
-1. From the repository root, run `just up` or `sh scripts/compose-up.sh` if
-   you do not have `just`. The command uses OpenSSL to create
-   `INVENTORY_IMPORT_LOCAL_TOKEN` in `.env` when there is no token.
-2. Open <http://localhost:3000>, select **Imports**, and paste the value of
-   `INVENTORY_IMPORT_LOCAL_TOKEN` from `.env` into **Local operator token**.
-3. Select [`data/inventory_frame.csv`](./data/inventory_frame.csv) and click
-   **Upload CSV**. Wait for the job to show **Completed**. On an empty
-   database, expect 1,000 applied rows and zero rejected.
+1. From the repository root, run `just up` or `sh scripts/compose-up.sh` if you
+   do not have `just`. The script uses OpenSSL to create
+   `INVENTORY_IMPORT_LOCAL_TOKEN` in `.env` if you have no token.
+2. Open the [local workspace](http://localhost:3000) and select **Imports**.
+   Paste the value of `INVENTORY_IMPORT_LOCAL_TOKEN` from `.env` into
+   **Local operator token**.
+3. Choose the [sample inventory CSV](./data/inventory_frame.csv) and select
+   **Upload CSV**. Wait for the job status to show **Completed**. On an empty
+   database, expect 1,000 applied rows and zero rejected rows.
 
-Existing non-empty tokens are reused. If startup rejects the token, clear its
-value in `.env` and rerun `just up`, or replace it with the output of
-`openssl rand -hex 32`.
+The startup script reuses any non-empty token. If startup rejects the token,
+clear its value in `.env` and rerun `just up`. You can also replace the value
+with the output of `openssl rand -hex 32`.
 
 ### Backend metrics
 
-- Open [Prometheus Targets](http://127.0.0.1:9091/targets) and wait for the
-  `frame-inventory-backend` target to show **UP**. It scrapes
-  `http://backend:8080/actuator/prometheus` on the Compose network.
-- Open [Grafana](http://127.0.0.1:3001), sign in with the initial credentials
-  above, and run `up{job="frame-inventory-backend"}` in **Explore** using the
-  default Prometheus data source. A value of `1` confirms the backend is being scraped.
-- Open [Frame Inventory Backend](http://127.0.0.1:3001/d/frame-inventory-backend/frame-inventory-backend)
-  for HTTP and gRPC request rate, errors, p50, p95, and p99 latency, and resource saturation.
-  Generate API traffic and allow at least two Prometheus scrapes for request graphs
-  to populate.
-- The **Frame inventory activity** section shows committed creates, updates, and
-  soft deletes, plus successful gRPC reads and version conflicts. The totals cover
-  the dashboard time range. Rejected or rolled-back writes and repeated deletes
-  that change no data are excluded from the totals.
+1. Open [Prometheus Targets](http://127.0.0.1:9091/targets) and wait for
+   `frame-inventory-backend` to show **UP**. Prometheus scrapes
+   `http://backend:8080/actuator/prometheus` on the Compose network.
+2. Sign in to [Grafana](http://127.0.0.1:3001) with the local credentials. In
+   **Explore**, use the default Prometheus data source to run
+   `up{job="frame-inventory-backend"}`. A value of `1` confirms the scrape works.
+3. Generate API traffic and wait for at least 2 Prometheus scrapes. Open the
+   [Frame Inventory Backend dashboard](http://127.0.0.1:3001/d/frame-inventory-backend/frame-inventory-backend)
+   to see HTTP and gRPC request rates, errors, p50, p95 and p99 latency, and
+   resource saturation.
+
+The dashboard's Frame inventory activity section counts committed creates,
+updates and soft deletes, successful gRPC reads and version conflicts over the
+selected time range. The totals exclude rejected or rolled-back writes and
+repeated deletes that leave the data unchanged.
 
 Prometheus and Grafana listen on localhost. Their named volumes keep metrics
 and Grafana settings across restarts.
 
 ### DELTA import dashboard
 
-The main Compose stack scrapes import metrics from the backend. For the
-host-based [local import setup](src/backend/README.md#local-import-operator),
-start Spring Boot with the dispatcher enabled and run the
-[Python worker](src/workflows/README.md). Set
-`MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,prometheus` and keep HTTP
-port 8080 reachable from Docker. On Docker Desktop, scrape that host backend
-with the local import Compose override.
+The main Compose stack scrapes import metrics from the backend container. If
+you run the backend on the host, start Spring Boot with the dispatcher enabled
+and run the Python worker. Set
+`MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,prometheus` and keep
+port 8080 reachable from Docker.
+[Local import setup](src/backend/README.md#local-import-operator)
+[Python worker setup](src/workflows/README.md)
+
+On Docker Desktop, use the local import Compose override to scrape the host
+backend.
 
 ```sh
 docker compose -f docker-compose.yml -f monitoring/compose.local-import.yml \
   up -d --no-deps prometheus grafana
 ```
 
-Open [Frame Inventory Imports](http://127.0.0.1:3001/d/frame-inventory-imports/frame-inventory-imports)
-to see the oldest pending and running jobs, terminal dispatch failures in the
-last hour, and mean and p95 apply duration. The age uses dispatch confirmation
-when available and job creation otherwise. Apply duration covers each activity
-attempt, including retries. Use the import job ID to find its
-`csv-import-<jobId>` workflow when investigating a specific job.
+The import dashboard shows the age of the oldest pending and running jobs,
+terminal dispatch failures in the last hour, and mean and p95 apply duration.
+[Frame Inventory Imports dashboard](http://127.0.0.1:3001/d/frame-inventory-imports/frame-inventory-imports)
 
-To return to scraping the containerized backend and BFF, run
-`docker compose up -d prometheus grafana` with the standard Compose configuration.
+The dashboard measures job age from dispatch confirmation when available, or
+from job creation otherwise. Apply duration covers each activity attempt,
+including retries. Use the job ID to find the `csv-import-<jobId>` workflow.
+
+To resume scraping the backend and BFF containers, run
+`docker compose up -d prometheus grafana` with the standard configuration.
 
 ### BFF metrics
 
-Run `docker compose up -d --build bff prometheus grafana`. If Prometheus was
-already running, reload its scrape configuration with
-`docker compose restart prometheus`. Confirm that `frame-inventory-bff` is
-**UP** in [Prometheus Targets](http://127.0.0.1:9091/targets). Prometheus scrapes
-`http://bff:9465/metrics` on the Compose network.
+1. Run `docker compose up -d --build bff prometheus grafana`. If Prometheus
+   was already running, reload its scrape configuration with
+   `docker compose restart prometheus`.
+2. Check that `frame-inventory-bff` shows **UP** in
+   [Prometheus Targets](http://127.0.0.1:9091/targets). Prometheus scrapes
+   `http://bff:9465/metrics` on the Compose network.
+3. Run the [frame list query](./src/bff/README.md) several times across at
+   least 2 scrapes. Run `{ frames(page: -1) { page } }` to generate a GraphQL
+   error.
 
-Open [Frame Inventory BFF](http://127.0.0.1:3001/d/frame-inventory-bff/frame-inventory-bff)
-for GraphQL request rate, error percentage, p50/p95/p99 latency, in-flight
-requests, and event loop utilization. The **Slowest queries and mutations (p95)**
-panel ranks top-level fields such as `frames` and `updateFrame` by resolver
-latency over the selected time range. Run the [frame list query](./src/bff/README.md)
-several times across at least two scrapes. Run `{ frames(page: -1) { page } }`
-to generate a GraphQL error. The dashboard counts GraphQL errors even when
-Apollo responds with HTTP 200.
+The BFF dashboard shows GraphQL request rate, error percentage, p50, p95 and
+p99 latency, requests in progress and event loop utilisation. It counts
+GraphQL errors even when Apollo returns HTTP 200.
+[Frame Inventory BFF dashboard](http://127.0.0.1:3001/d/frame-inventory-bff/frame-inventory-bff)
+
+The Slowest queries and mutations (p95) panel ranks top-level fields such as
+`frames` and `updateFrame` by resolver latency for the selected time range.
 
 ### Backend and BFF logs
 
-Run `docker compose up -d --build bff grafana`. Alloy reads the backend and
-BFF containers’ stdout and stderr through the Docker socket and sends them
-to Loki. Loki stores logs in the `loki-data` volume with seven-day retention.
-For a failed GraphQL request, take the `X-Correlation-Id` response header
-and search both services with
-`{service_name=~"backend|bff"} | json | correlationId="your-id"`.
-For a production deployment, configure log storage, retention, and access
-controls for that environment.
+Run `docker compose up -d --build bff grafana`. Alloy reads standard output and
+standard error from the backend and BFF containers through the Docker socket.
+It sends the logs to Loki, which keeps them in `loki-data` for 7 days.
 
-Open [Grafana Explore](http://127.0.0.1:3001/explore), select **Loki**,
-and switch to **Code** mode to run either LogQL query.
+In Grafana Explore, select **Loki** and switch to **Code** mode.
+[Grafana Explore](http://127.0.0.1:3001/explore)
 
-- Backend — `{service_name="backend"}`
-- BFF — `{service_name="bff"}`
+Use `{service_name="backend"}` for backend logs or `{service_name="bff"}` for
+BFF logs. To trace a failed GraphQL request across both services, take the
+`X-Correlation-Id` response header and replace `your-id` in this query.
+
+```logql
+{service_name=~"backend|bff"} | json | correlationId="your-id"
+```
+
+For production, configure log storage, retention and access controls for the
+deployment environment.
 
 ### OpenTelemetry Collector
 
-Run `docker compose up -d --build otel-collector` to start the Collector and its
-dependencies. The Collector scrapes `http://backend:8080/actuator/prometheus`
-every 15 seconds and exposes the latest samples on localhost. Once the backend
-is ready and the first scrape completes, check for a JVM metric from Spring Boot.
+Run `docker compose up -d --build otel-collector` to start the Collector and
+its dependencies. The Collector scrapes
+`http://backend:8080/actuator/prometheus` every 15 seconds and exposes the
+latest samples on localhost.
+
+Once the backend is ready and the first scrape finishes, check for a Spring
+Boot JVM metric.
 
 ```bash
 curl --fail --silent --show-error http://127.0.0.1:9464/metrics | rg '^jvm_memory_used_bytes\{'
 ```
 
-## Running modules without Docker
+## Run modules on the host
 
 ### Backend
 
-Start PostgreSQL before running the backend locally. Spring Boot applies the
-Flyway migrations on startup.
+Start PostgreSQL before running the backend. Spring Boot applies the Flyway
+migrations at startup.
 
 ```bash
 docker compose up -d --wait postgres
@@ -399,13 +464,16 @@ npm install
 npm run dev
 ```
 
-## Inventory import development services
+## Develop CSV imports locally
 
-Compose starts Temporal and the S3/SQS emulator. Follow the
-[CSV import smoke test](#csv-import) to enable imports and the
-[browser verification steps](src/frontend/README.md#verify-a-delta-import-in-the-browser)
-for repeat uploads and row diagnostics.
-The [Temporal UI](http://127.0.0.1:8233) shows each import workflow.
+Compose starts Temporal and the S3 and SQS emulator. Use the CSV import smoke
+test to enable imports, then follow the browser steps to repeat uploads and
+inspect row errors. [CSV import smoke test](#csv-import)
+[Browser verification for DELTA imports](src/frontend/README.md#verify-a-delta-import-in-the-browser)
 
-See [inventory import infrastructure](infra/inventory-import/README.md) for
-emulator configuration, Terraform, and the infrastructure smoke test.
+Use the Temporal web interface to inspect each import workflow.
+[Local Temporal web interface](http://127.0.0.1:8233)
+
+The infrastructure guide covers emulator configuration, Terraform and the
+infrastructure smoke test.
+[Inventory import infrastructure](infra/inventory-import/README.md)
