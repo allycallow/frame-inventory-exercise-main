@@ -1,0 +1,9 @@
+implement https://linear.app/upfrontbeats/issue/GLO-44
+
+---
+
+open PR
+
+---
+
+merged #39

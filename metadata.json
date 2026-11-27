@@ -3,14 +3,29 @@
   "checkpoint_id": "01M8EHS31D04M53HHEG37EEN8S",
   "strategy": "manual-commit",
   "branch": "alex/glo-65-give-frames-and-imports-their-own-routes-frames",
-  "checkpoints_count": 28,
+  "checkpoints_count": 30,
   "files_touched": [
     "README.md",
+    "src/frontend/src/app/README.md",
+    "src/frontend/src/app/frame-detail.test.tsx",
+    "src/frontend/src/app/frame-detail.tsx",
     "src/frontend/src/app/frame-history.tsx",
+    "src/frontend/src/app/frames/frames-workspace.tsx",
+    "src/frontend/src/app/frames/page.tsx",
+    "src/frontend/src/app/globals.css",
+    "src/frontend/src/app/imports/[jobId]/page.tsx",
+    "src/frontend/src/app/imports/import-job.tsx",
+    "src/frontend/src/app/imports/import-route.ts",
+    "src/frontend/src/app/imports/import-upload.tsx",
+    "src/frontend/src/app/imports/layout.tsx",
+    "src/frontend/src/app/imports/page.tsx",
+    "src/frontend/src/app/inventory-import.tsx",
     "src/frontend/src/app/inventory-list.test.tsx",
     "src/frontend/src/app/inventory-list.tsx",
+    "src/frontend/src/app/inventory-routing.test.tsx",
     "src/frontend/src/app/inventory-workspace.tsx",
-    "src/frontend/src/app/layout.tsx"
+    "src/frontend/src/app/layout.tsx",
+    "src/frontend/src/app/page.tsx"
   ],
   "sessions": [
     {
@@ -54,14 +69,21 @@
       "compact_transcript": "/5/transcript.jsonl",
       "content_hash": "/5/content_hash.txt",
       "prompt": "/5/prompt.txt"
+    },
+    {
+      "metadata": "/6/metadata.json",
+      "transcript": "/6/full.jsonl",
+      "compact_transcript": "/6/transcript.jsonl",
+      "content_hash": "/6/content_hash.txt",
+      "prompt": "/6/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 174,
-    "cache_creation_tokens": 23961,
-    "cache_read_tokens": 5220171,
-    "output_tokens": 7636,
-    "api_call_count": 58
+    "input_tokens": 210,
+    "cache_creation_tokens": 27187,
+    "cache_read_tokens": 6116502,
+    "output_tokens": 9170,
+    "api_call_count": 70
   },
   "redaction": {
     "replacements": 238,

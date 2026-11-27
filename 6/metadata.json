@@ -1,0 +1,70 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8EHS31D04M53HHEG37EEN8S",
+  "session_id": "01a21d15-5e02-7990-9209-63120cfcdc46",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-27T13:05:43.488996Z",
+  "branch": "alex/glo-65-give-frames-and-imports-their-own-routes-frames",
+  "checkpoints_count": 2,
+  "save_step_count": 2,
+  "files_touched": [
+    "README.md",
+    "src/frontend/src/app/README.md",
+    "src/frontend/src/app/frame-detail.test.tsx",
+    "src/frontend/src/app/frame-detail.tsx",
+    "src/frontend/src/app/frame-history.tsx",
+    "src/frontend/src/app/frames/frames-workspace.tsx",
+    "src/frontend/src/app/frames/page.tsx",
+    "src/frontend/src/app/globals.css",
+    "src/frontend/src/app/imports/[jobId]/page.tsx",
+    "src/frontend/src/app/imports/import-job.tsx",
+    "src/frontend/src/app/imports/import-route.ts",
+    "src/frontend/src/app/imports/import-upload.tsx",
+    "src/frontend/src/app/imports/layout.tsx",
+    "src/frontend/src/app/imports/page.tsx",
+    "src/frontend/src/app/inventory-import.tsx",
+    "src/frontend/src/app/inventory-list.test.tsx",
+    "src/frontend/src/app/inventory-list.tsx",
+    "src/frontend/src/app/inventory-routing.test.tsx",
+    "src/frontend/src/app/inventory-workspace.tsx",
+    "src/frontend/src/app/layout.tsx",
+    "src/frontend/src/app/page.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "11b6d4147454",
+  "checkpoint_transcript_start": 177,
+  "transcript_lines_at_start": 177,
+  "compact_transcript_start": 40,
+  "token_usage": {
+    "input_tokens": 36,
+    "cache_creation_tokens": 3226,
+    "cache_read_tokens": 896331,
+    "output_tokens": 1534,
+    "api_call_count": 12
+  },
+  "session_token_usage": {
+    "input_tokens": 223,
+    "cache_creation_tokens": 76023,
+    "cache_read_tokens": 2163055,
+    "output_tokens": 13104,
+    "api_call_count": 37
+  },
+  "redaction": {
+    "replacements": 0,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 2
+  }
+}
