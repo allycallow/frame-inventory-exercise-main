@@ -3,7 +3,7 @@
   "checkpoint_id": "01M8E4YZXEW5AGR0P8DV3X5CNY",
   "strategy": "manual-commit",
   "branch": "alex/glo-36-run-delta-imports-with-python-worker",
-  "checkpoints_count": 14,
+  "checkpoints_count": 18,
   "files_touched": [
     "src/backend/README.md",
     "src/bff/src/index.ts",
@@ -30,6 +30,13 @@
       "compact_transcript": "/2/transcript.jsonl",
       "content_hash": "/2/content_hash.txt",
       "prompt": "/2/prompt.txt"
+    },
+    {
+      "metadata": "/3/metadata.json",
+      "transcript": "/3/full.jsonl",
+      "compact_transcript": "/3/transcript.jsonl",
+      "content_hash": "/3/content_hash.txt",
+      "prompt": "/3/prompt.txt"
     }
   ],
   "token_usage": {
@@ -40,14 +47,14 @@
     "api_call_count": 10
   },
   "redaction": {
-    "replacements": 19,
+    "replacements": 141,
     "layers": {
-      "betterleaks": 1,
+      "betterleaks": 2,
       "connection_string": 0,
       "credential_key": 0,
-      "credential_value": 3,
+      "credential_value": 87,
       "credentialed_uri": 0,
-      "entropy": 15,
+      "entropy": 52,
       "key_context": 0,
       "provider_token": 0,
       "shell_stdin": 0
