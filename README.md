@@ -6,6 +6,22 @@ filter them by status and open each frame's detail page.
 
 [Exercise requirements](./INSTRUCTIONS.md) · [Sample inventory export](./data/inventory_frame.csv)
 
+## Prerequisites
+
+To run the full stack, install Docker with Docker Compose v2, for example
+[Docker Desktop](https://www.docker.com/products/docker-desktop/). Compose
+builds every service, so you do not need other runtimes on the host.
+
+These tools are optional.
+
+| Tool | When you need it |
+| --- | --- |
+| [`just`](https://github.com/casey/just) and `openssl` | To run `just up`, which creates a local import token. |
+| Java 21 | To run the backend or its tests on the host. The Gradle wrapper downloads Gradle. |
+| Node.js 22.12 or newer | To run the frontend or BFF on the host, and for the Commitlint hook. |
+| Python 3.12 and [`uv`](https://docs.astral.sh/uv/) | To run the Temporal worker on the host. |
+| [`pre-commit`](https://pre-commit.com/#installation) | To install the Git hooks. |
+
 ## Run the application locally
 
 From the repository root, run the following command to build and start the
