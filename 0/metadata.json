@@ -1,0 +1,52 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8EHJNXP7HGKZR3XF3S1WXD8",
+  "session_id": "01a21d15-5e02-7990-9209-63120cfcdc46",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-27T13:02:11.563641Z",
+  "branch": "alex/glo-44-improve-better-history-view",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "src/frontend/src/app/frame-detail.test.tsx",
+    "src/frontend/src/app/frame-detail.tsx",
+    "src/frontend/src/app/frame-fields.ts",
+    "src/frontend/src/app/frame-history-diff.ts",
+    "src/frontend/src/app/frame-history.graphql",
+    "src/frontend/src/app/frame-history.test.tsx",
+    "src/frontend/src/app/frame-history.tsx",
+    "src/frontend/src/app/globals.css",
+    "src/frontend/src/generated/graphql.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "78c6f4c2249d",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 187,
+    "cache_creation_tokens": 72797,
+    "cache_read_tokens": 1266724,
+    "output_tokens": 11570,
+    "api_call_count": 25
+  },
+  "session_token_usage": {
+    "input_tokens": 187,
+    "cache_creation_tokens": 72797,
+    "cache_read_tokens": 1266724,
+    "output_tokens": 11570,
+    "api_call_count": 25
+  },
+  "redaction": {
+    "replacements": 0,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  }
+}
