@@ -1,0 +1,48 @@
+query FrameDetail($id: ID!) {
+  frame(frameId: $id) {
+    frameId
+    attributes {
+      status
+      statusReason
+      siteNo
+      inventorySiteNo
+      panelNumber
+      locationId
+      environment
+      address
+      station
+      airport
+      latitude
+      longitude
+      distanceToClosestSchool
+      location {
+        countryCode
+        region
+        town
+        postcode
+      }
+      format {
+        technology
+        formatCode
+        sizeGroupCode
+      }
+      sizeCode
+      aspectRatioCode
+      tSize
+      pixelHeight
+      pixelWidth
+      illuminationTypeId
+      numberOfSlots
+      impactWeight
+      premium
+      productionRateCard
+      productionRateCardLegacy
+      pricingGrade
+    }
+    externalReferences {
+      key
+      value
+    }
+    linkedFrameIds
+  }
+}

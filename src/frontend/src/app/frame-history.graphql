@@ -1,0 +1,15 @@
+query FrameHistory($id: ID!) {
+  frameHistory(frameId: $id) {
+    versionId
+    validFrom
+    validTo
+    current
+    changeSource
+    closedByChangeSource
+    importJobId
+    attributes {
+      status
+      statusReason
+    }
+  }
+}

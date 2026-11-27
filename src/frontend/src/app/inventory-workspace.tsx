@@ -1,18 +1,55 @@
 'use client'
 
-import { useState, type ReactElement } from 'react'
+import { usePathname } from 'next/navigation'
+import { createContext, useCallback, useContext, useMemo, useState, type ReactElement, type ReactNode } from 'react'
 import { FrameDialog } from './frame-dialog'
 import { InventoryImport } from './inventory-import'
 import { InventoryList } from './inventory-list'
 
-export function InventoryWorkspace(): ReactElement {
+type InventoryActions = {
+  showImports: (jobId?: string) => void
+  addFrame: () => void
+}
+
+const InventoryActionsContext = createContext<InventoryActions | null>(null)
+
+export function useInventoryActions(): InventoryActions {
+  const actions = useContext(InventoryActionsContext)
+  if (!actions) throw new Error('Inventory actions require the inventory workspace.')
+  return actions
+}
+
+export function FrameListActions(): ReactElement {
+  const { showImports, addFrame } = useInventoryActions()
+  return (
+    <div className="actions">
+      <button className="button button-secondary" onClick={() => showImports()}>
+        Import CSV
+      </button>
+      <button className="button button-primary" onClick={addFrame}>
+        Add a frame
+      </button>
+    </div>
+  )
+}
+
+export function InventoryWorkspace({ children }: { children: ReactNode }): ReactElement {
+  const showList = usePathname() === '/'
   const [area, setArea] = useState<'frames' | 'imports'>('frames')
   const [jobId, setJobId] = useState('')
   const [frameDialog, setFrameDialog] = useState<{ frameId?: string } | null>(null)
   const [savedFrame, setSavedFrame] = useState<{ frameId: string; action: 'created' | 'updated' } | null>(null)
+  const showImports = useCallback((id?: string): void => {
+    if (id) setJobId(id)
+    setArea('imports')
+  }, [])
+  const actions = useMemo<InventoryActions>(() => ({
+    showImports,
+    addFrame: () => setFrameDialog({}),
+  }), [showImports])
 
   return (
-    <>
+    <InventoryActionsContext.Provider value={actions}>
       <header className="masthead">
         <div className="masthead-content">
           <span className="product">Frame Inventory</span>
@@ -25,7 +62,7 @@ export function InventoryWorkspace(): ReactElement {
             </button>
             <button
               aria-current={area === 'imports' ? 'page' : undefined}
-              onClick={() => setArea('imports')}
+              onClick={() => showImports()}
             >
               Imports
             </button>
@@ -34,43 +71,28 @@ export function InventoryWorkspace(): ReactElement {
       </header>
       <main>
         <section hidden={area !== 'frames'}>
-          <div className="page-heading">
-            <div>
-              <h1>Frames</h1>
-              <p className="subtle">Select a frame ID to view its version history.</p>
-            </div>
-            <div className="actions">
-              <button className="button button-secondary" onClick={() => setArea('imports')}>
-                Import CSV
-              </button>
-              <button className="button button-primary" onClick={() => setFrameDialog({})}>
-                Add a frame
-              </button>
-            </div>
-          </div>
-          {savedFrame && (
-            <p className="card panel-message frame-saved" role="status">
-              Frame <strong>{savedFrame.frameId}</strong> was {savedFrame.action}.
-            </p>
-          )}
           {area === 'frames' && (
-            <InventoryList
-              onEdit={(frameId) => setFrameDialog({ frameId })}
-              onJob={(id) => {
-                setJobId(id)
-                setArea('imports')
-              }}
-            />
-          )}
-          {frameDialog && (
-            <FrameDialog
-              frameId={frameDialog.frameId}
-              onClose={() => setFrameDialog(null)}
-              onSaved={(frameId) => {
-                setSavedFrame({ frameId, action: frameDialog.frameId === undefined ? 'created' : 'updated' })
-                setFrameDialog(null)
-              }}
-            />
+            <>
+              {children}
+              <div hidden={!showList}>
+                {savedFrame && (
+                  <p className="card panel-message frame-saved" role="status">
+                    Frame <strong>{savedFrame.frameId}</strong> was {savedFrame.action}.
+                  </p>
+                )}
+                <InventoryList active={showList} onEdit={(frameId) => setFrameDialog({ frameId })} />
+              </div>
+              {showList && frameDialog && (
+                <FrameDialog
+                  frameId={frameDialog.frameId}
+                  onClose={() => setFrameDialog(null)}
+                  onSaved={(frameId) => {
+                    setSavedFrame({ frameId, action: frameDialog.frameId === undefined ? 'created' : 'updated' })
+                    setFrameDialog(null)
+                  }}
+                />
+              )}
+            </>
           )}
         </section>
         <section hidden={area !== 'imports'}>
@@ -83,6 +105,6 @@ export function InventoryWorkspace(): ReactElement {
           <InventoryImport trackedId={jobId} onTrack={setJobId} />
         </section>
       </main>
-    </>
+    </InventoryActionsContext.Provider>
   )
 }
