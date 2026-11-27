@@ -1,5 +1,5 @@
-query Frames($page: Int!) {
-  frames(page: $page, size: 25) {
+query Frames($page: Int!, $statuses: [String!], $search: String) {
+  frames(page: $page, size: 25, statuses: $statuses, search: $search) {
     page
     size
     hasNext
