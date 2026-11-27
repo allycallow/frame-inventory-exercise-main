@@ -1,0 +1,53 @@
+$egm:egm-bootstrap
+
+---
+
+yes
+
+---
+
+- Run the drift report
+
+---
+
+$egm:egm-brainstorm Review `data/inventory_frame.csv` to map out the raw fields and data types, normalize the structure into relational tables (eliminating duplicate attributes and defining primary/foreign keys), and implement the resulting schema as a versioned Flyway SQL migration for Spring Boot.
+
+---
+
+Treat it as an append-only versioned history (SCD Type 2): close out the existing active record (is_current = false, set valid_to) and insert the incoming CSV row as the new current version so we preserve a full audit trail.
+
+---
+
+Ignore rows whose modified_date is strictly older than the current active version
+
+---
+
+send for review
+
+---
+
+Keep the Flyway migration focused on schema structure and hard constraints (such as the partial unique index on active frame_ids), and enforce the versioning and stale-modified_date rules inside the @Transactional Spring service layer so all write paths (CSV upload, create, and edit) share the same testable domain logic.
+
+---
+
+Nice lets open PR
+
+---
+
+can you tidy concepts_brief.md and put it in its own folder
+
+---
+
+rename file so its clear
+
+---
+
+how would the endpoints look in spring boot
+
+---
+
+Was thinking to upload the csv via s3 upload presigned url and use s3 trigger to push to SQS queue and trigger temporal worker to do the batch upload
+
+---
+
+Was thinking to write to staging tables first and then merge. Just thinking scale wise.
