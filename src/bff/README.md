@@ -4,7 +4,7 @@ From the repository root, run `docker compose up --build bff`. Open [Apollo Sand
 
 ```graphql
 query ListFrames {
-  frames(page: 0, size: 25) {
+  frames(page: 0, size: 25, statuses: ["LIVE", "PENDING"], search: "london") {
     items {
       frameId
       versionId
@@ -23,6 +23,10 @@ query ListFrames {
 The query uses the backend's zero-based pagination. Omitted arguments use page
 `0` and size `25`. Sizes from `1` through `50` are valid. An empty inventory
 returns an empty list with `hasNext: false`.
+
+The optional `statuses` argument matches any of the supplied exact status codes.
+The optional `search` argument matches a case-insensitive literal substring of
+the frame ID or town. The backend applies both filters before pagination.
 
 When Spring rejects invalid input, the GraphQL error has code `BAD_USER_INPUT`.
 If the backend supplies validation details, `extensions.fieldViolations`
