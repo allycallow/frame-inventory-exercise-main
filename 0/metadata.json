@@ -1,0 +1,52 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8EJ05Q0M0NWP2M840D51ME1",
+  "session_id": "01a21d15-5e02-7990-9209-63120cfcdc46",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-27T13:09:33.013709Z",
+  "branch": "docs/consolidate-design-docs",
+  "checkpoints_count": 2,
+  "save_step_count": 2,
+  "files_touched": [
+    "README.md",
+    "docs/frame-inventory-schema/frame-inventory-schema.md",
+    "docs/frame-management-grpc-api.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "744a70baaac2",
+  "checkpoint_transcript_start": 333,
+  "transcript_lines_at_start": 333,
+  "compact_transcript_start": 76,
+  "token_usage": {
+    "input_tokens": 27,
+    "cache_creation_tokens": 12195,
+    "cache_read_tokens": 773297,
+    "output_tokens": 2455,
+    "api_call_count": 9
+  },
+  "session_token_usage": {
+    "input_tokens": 277,
+    "cache_creation_tokens": 91178,
+    "cache_read_tokens": 3635890,
+    "output_tokens": 16956,
+    "api_call_count": 55
+  },
+  "redaction": {
+    "replacements": 0,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 4
+  }
+}
