@@ -13,12 +13,14 @@ docker compose up --build
 ```
 
 Once PostgreSQL is healthy, the backend applies pending Flyway migrations during startup.
+You can start the stack with no `.env` or with a copy of `.env.example`.
+With an empty or missing token, the Imports tab explains how to enable CSV uploads.
 
 If you have `just` installed, run `just` to list the available recipes.
 
 | Command | Purpose |
 |---------|---------|
-| `just up` | Build and start the whole stack in the foreground. |
+| `just up` | Generate a local import token if needed, then build and start the stack. |
 | `just down` | Stop the stack and retain its named data volumes. |
 | `just compose logs -f backend` | Pass arguments through to Docker Compose. |
 | `just migrate` | Run Flyway on its own in a one-off backend container. |
@@ -84,9 +86,24 @@ Run `pre-commit run --all-files` to check the whole repository.
 
 Once the stack is up, check the service entry points.
 
-- Open <http://localhost:3000> to view the frame list. See the [frontend setup](./src/frontend/README.md) to enable local imports.
+- Open <http://localhost:3000> to view the frame list.
 - Hit the backend directly: <http://localhost:8080/api/health>.
 - Open [Apollo Sandbox](http://127.0.0.1:4000) and run the [frame list query](./src/bff/README.md).
+
+#### CSV import
+
+1. From the repository root, run `just up` or `sh scripts/compose-up.sh` if
+   you do not have `just`. The command uses OpenSSL to create
+   `INVENTORY_IMPORT_LOCAL_TOKEN` in `.env` when there is no token.
+2. Open <http://localhost:3000>, select **Imports**, and paste the value of
+   `INVENTORY_IMPORT_LOCAL_TOKEN` from `.env` into **Local operator token**.
+3. Select [`data/inventory_frame.csv`](./data/inventory_frame.csv) and click
+   **Upload CSV**. Wait for the job to show **Completed**. On an empty
+   database, expect 1,000 applied rows and zero rejected.
+
+Existing non-empty tokens are reused. If startup rejects the token, clear its
+value in `.env` and rerun `just up`, or replace it with the output of
+`openssl rand -hex 32`.
 
 ### Backend metrics
 
@@ -201,9 +218,10 @@ npm run dev
 
 ## Inventory import development services
 
-Compose starts Temporal and the S3/SQS emulator. Set
-`INVENTORY_IMPORT_LOCAL_TOKEN` in the root `.env` to enable **Imports** and
-follow the [browser verification steps](src/frontend/README.md#verify-a-delta-import-in-the-browser).
+Compose starts Temporal and the S3/SQS emulator. Follow the
+[CSV import smoke test](#csv-import) to enable imports and the
+[browser verification steps](src/frontend/README.md#verify-a-delta-import-in-the-browser)
+for repeat uploads and row diagnostics.
 The [Temporal UI](http://127.0.0.1:8233) shows each import workflow.
 
 See [inventory import infrastructure](infra/inventory-import/README.md) for

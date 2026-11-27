@@ -82,6 +82,7 @@ services:
     environment:
       BACKEND_URL: http://backend:8080
       BFF_URL: http://bff:4000
+      LOCAL_IMPORTS_ENABLED: ${INVENTORY_IMPORT_LOCAL_TOKEN:+true}
     volumes:
       - ./src/frontend/src:/app/src/frontend/src
       - ./src/frontend/public:/app/src/frontend/public

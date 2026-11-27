@@ -37,6 +37,17 @@ class LocalImportIdentityTests {
     }
 
     @Test
+    void explainsHowToGenerateAReplacementForAnInvalidToken() {
+        var environment = new MockEnvironment();
+        environment.setActiveProfiles("local-import");
+
+        assertThatThrownBy(() -> new LocalImportIdentity(environment, "invalid"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("INVENTORY_IMPORT_LOCAL_TOKEN")
+                .hasMessageContaining("openssl rand -hex 32");
+    }
+
+    @Test
     void rejectsNonLoopbackPeerEvenWithValidCredential() {
         peer("192.0.2.1");
         localIdentity().interceptCall(call, bearer(TOKEN), handler);
