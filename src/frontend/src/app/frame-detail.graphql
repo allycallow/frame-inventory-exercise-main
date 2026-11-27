@@ -1,6 +1,7 @@
 query FrameDetail($id: ID!) {
   frame(frameId: $id) {
     frameId
+    current
     attributes {
       status
       statusReason
