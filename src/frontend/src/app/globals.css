@@ -545,6 +545,34 @@ tbody tr:last-child th {
   margin-top: 5px;
 }
 
+.history-changes {
+  display: grid;
+  gap: var(--sp-1);
+  margin: var(--sp-1) 0;
+  overflow-wrap: anywhere;
+}
+.history-changes dt {
+  font-weight: var(--fw-semibold);
+}
+.history-changes dt,
+.history-changes dd {
+  display: inline;
+  margin: 0;
+}
+.history-changes dt::after {
+  content: ': ';
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 @media (max-width: 960px) {
   .workspace,
   .inventory-results {

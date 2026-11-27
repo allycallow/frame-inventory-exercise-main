@@ -8,6 +8,8 @@ import { GraphQLError } from 'graphql'
 import {
   FrameDetailDocument,
   FrameForEditDocument,
+  FrameHistoryDocument,
+  type FrameHistoryQuery,
   UpdateFrameDocument,
   type FrameDetailQuery,
   type UpdateFrameMutationVariables,
@@ -130,16 +132,59 @@ test('opens the prefilled edit dialog from details and refreshes after saving a 
   expect(screen.queryByRole('dialog')).toBeNull()
 })
 
-test('hides Edit when the service reports a soft-deleted frame as not found', async () => {
+const missingFrame = new GraphQLError('Frame not found', { extensions: { code: 'NOT_FOUND' } })
+
+test('opens the history of a soft-deleted frame without offering Edit', async () => {
+  const history: FrameHistoryQuery = {
+    frameHistory: [{
+      __typename: 'Frame', versionId: '1', attributes, linkedFrameIds: [], externalReferences: [],
+      validFrom: '2026-10-01T12:00:00Z', validTo: '2026-10-02T12:00:00Z', current: false,
+      changeSource: 'MANUAL_CREATE', closedByChangeSource: 'MANUAL_DELETE',
+      importJobId: null, sourceModifiedAt: null,
+    }],
+  }
+
   render(
-    <MockedProvider mocks={[{
-      request: { query: FrameDetailDocument, variables: { id: frameId } },
-      result: { errors: [new GraphQLError('Frame not found', { extensions: { code: 'NOT_FOUND' } })] },
-    }]}>
+    <MockedProvider mocks={[
+      {
+        request: { query: FrameDetailDocument, variables: { id: frameId } },
+        result: { errors: [missingFrame] },
+      },
+      {
+        request: { query: FrameHistoryDocument, variables: { id: frameId } },
+        result: { data: history },
+        maxUsageCount: 2,
+      },
+    ]}>
+      <FrameDetail frameId={frameId} />
+    </MockedProvider>,
+  )
+
+  expect(await screen.findByText('This frame was deleted.')).toBeDefined()
+  expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Version history' }))
+  const dialog = within(screen.getByRole('dialog', { name: 'Version history' }))
+  expect(await dialog.findByText('Deleted')).toBeDefined()
+  expect(dialog.getByText('Manual create')).toBeDefined()
+})
+
+test('shows a missing frame without offering Edit or Version history', async () => {
+  render(
+    <MockedProvider mocks={[
+      {
+        request: { query: FrameDetailDocument, variables: { id: frameId } },
+        result: { errors: [missingFrame] },
+      },
+      {
+        request: { query: FrameHistoryDocument, variables: { id: frameId } },
+        result: { errors: [missingFrame] },
+      },
+    ]}>
       <FrameDetail frameId={frameId} />
     </MockedProvider>,
   )
 
   expect(await screen.findByText('Frame not found.')).toBeDefined()
   expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Version history' })).toBeNull()
 })

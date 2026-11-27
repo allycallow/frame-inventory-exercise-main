@@ -1,11 +1,12 @@
 'use client'
 
 import { CombinedGraphQLErrors } from '@apollo/client/errors'
-import { useQuery } from '@apollo/client/react'
+import { skipToken, useQuery } from '@apollo/client/react'
 import Link from 'next/link'
 import { useState, type ReactElement, type ReactNode } from 'react'
-import { FrameDetailDocument } from '../generated/graphql'
+import { FrameDetailDocument, FrameHistoryDocument } from '../generated/graphql'
 import { FrameDialog } from './frame-dialog'
+import { formatFrameField, frameFieldGroups } from './frame-fields'
 import { HistoryDialog } from './frame-history'
 import { frameDetailHref } from './frame-route'
 import { errorMessage } from './inventory-api'
@@ -48,17 +49,24 @@ export function FrameDetail({ frameId }: { frameId: string }): ReactElement {
     error.errors.every(({ extensions }) => extensions?.code === 'NOT_FOUND')
   )
 
+  const { data: history, loading: historyLoading } = useQuery(FrameHistoryDocument, notFound ? {
+    variables: { id: frameId },
+    fetchPolicy: 'network-only',
+    ssr: false,
+  } : skipToken)
+  const deleted = notFound && history?.frameHistory[0]?.closedByChangeSource === 'MANUAL_DELETE'
+
   return (
     <>
       <Link className="text-button detail-back" href="/">← Back to frames</Link>
       <div className="page-heading detail-heading">
         <h1>{frameId}</h1>
-        {frame && (
+        {(frame || deleted) && (
           <div className="actions">
             <button className="button button-secondary" onClick={() => setShowHistory(true)}>
               Version history
             </button>
-            {frame.current && (
+            {frame?.current && (
               <button className="button button-primary" onClick={() => {
                 setSavedFrameId(null)
                 setShowEdit(true)
@@ -74,10 +82,10 @@ export function FrameDetail({ frameId }: { frameId: string }): ReactElement {
           Frame <strong>{savedFrameId}</strong> was updated.
         </p>
       )}
-      {loading ? (
+      {loading || (notFound && historyLoading) ? (
         <p className="card panel-message" role="status">Loading frame details…</p>
       ) : notFound ? (
-        <p className="card panel-message" role="status">Frame not found.</p>
+        <p className="card panel-message" role="status">{deleted ? 'This frame was deleted.' : 'Frame not found.'}</p>
       ) : error || !frame || !attributes ? (
         <div className="card panel-message" role="alert">
           <p className="error">{error ? errorMessage(error) : 'Inventory service returned no result.'}</p>
@@ -89,47 +97,14 @@ export function FrameDetail({ frameId }: { frameId: string }): ReactElement {
         </div>
       ) : (
         <div className="detail-grid">
-          <DetailFields title="Frame" fields={[
-            ['Status', <StatusChip key="status" value={attributes.status} />],
-            ['Status reason', attributes.statusReason],
-            ['Site number', attributes.siteNo],
-            ['Inventory site number', attributes.inventorySiteNo],
-            ['Panel number', attributes.panelNumber],
-            ['Location ID', attributes.locationId],
-            ['Environment', attributes.environment],
-          ]} />
-          <DetailFields title="Location" fields={[
-            ['Address', attributes.address],
-            ['Country code', attributes.location?.countryCode],
-            ['Region', attributes.location?.region],
-            ['Town', attributes.location?.town],
-            ['Postcode', attributes.location?.postcode],
-            ['Station', attributes.station],
-            ['Airport', attributes.airport],
-            ['Latitude', attributes.latitude],
-            ['Longitude', attributes.longitude],
-            ['Distance to closest school', attributes.distanceToClosestSchool == null
-              ? null : `${attributes.distanceToClosestSchool} m`],
-          ]} />
-          <DetailFields title="Format and specifications" fields={[
-            ['Technology', attributes.format?.technology],
-            ['Format code', attributes.format?.formatCode],
-            ['Size group code', attributes.format?.sizeGroupCode],
-            ['Size code', attributes.sizeCode],
-            ['Aspect ratio code', attributes.aspectRatioCode],
-            ['T-size', attributes.tSize],
-            ['Pixel height', attributes.pixelHeight],
-            ['Pixel width', attributes.pixelWidth],
-            ['Illumination type ID', attributes.illuminationTypeId],
-            ['Number of slots', attributes.numberOfSlots],
-          ]} />
-          <DetailFields title="Commercial" fields={[
-            ['Impact weight', attributes.impactWeight],
-            ['Premium', attributes.premium ? 'Yes' : 'No'],
-            ['Production rate card', attributes.productionRateCard],
-            ['Legacy production rate card', attributes.productionRateCardLegacy],
-            ['Pricing grade', attributes.pricingGrade],
-          ]} />
+          {frameFieldGroups.map(({ title, fields }) => (
+            <DetailFields key={title} title={title} fields={fields.map(([field, name, read]) => [
+              name,
+              field === 'status'
+                ? <StatusChip key="status" value={attributes.status} />
+                : formatFrameField(field, read(attributes)),
+            ])} />
+          ))}
           {frame.externalReferences.length > 0 ? (
             <DetailFields title="External references" fields={
               frame.externalReferences.map(({ key, value }) => [key, value])
