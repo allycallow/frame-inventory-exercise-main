@@ -3,7 +3,7 @@
   "checkpoint_id": "01M8EF546E1KD6E2SD8D7EGJCR",
   "strategy": "manual-commit",
   "branch": "alex/glo-63-add-an-edit-button-to-the-frame-detail-page",
-  "checkpoints_count": 9,
+  "checkpoints_count": 20,
   "files_touched": [
     "src/frontend/src/app/README.md",
     "src/frontend/src/app/frame-detail.graphql",
@@ -24,6 +24,13 @@
       "compact_transcript": "/1/transcript.jsonl",
       "content_hash": "/1/content_hash.txt",
       "prompt": "/1/prompt.txt"
+    },
+    {
+      "metadata": "/2/metadata.json",
+      "transcript": "/2/full.jsonl",
+      "compact_transcript": "/2/transcript.jsonl",
+      "content_hash": "/2/content_hash.txt",
+      "prompt": "/2/prompt.txt"
     }
   ],
   "token_usage": {
