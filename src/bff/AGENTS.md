@@ -31,10 +31,11 @@
   with Spring's contract and preserve omission where Spring supplies a default.
 - For each validation rule, test a valid boundary and a rejected value. Check
   that invalid input returns `BAD_USER_INPUT` and leaves the gRPC stub uncalled.
-- `frames(page: Int, size: Int)` calls Spring's `ListFrames` RPC and returns
-  `items`, `page`, `size`, and `hasNext`. Reject negative pages and sizes
-  outside `1–50` before calling gRPC. Treat omitted or null arguments as unset
-  so Spring applies page `0` and size `25`.
+- The GraphQL `frames` query calls Spring's `ListFrames` RPC and returns
+  `items`, `page`, `size`, and `hasNext`. Reject negative pages, sizes outside
+  `1–50`, and null characters in `statuses` or `search` before calling gRPC.
+  Treat omitted or null arguments as unset so Spring applies page `0`, size
+  `25`, and no filters.
 - The remaining operations are `frame`, `frameHistory`, `createFrame`,
   `updateFrame`, and `deleteFrame`. Pass expected version IDs to gRPC as
   positive 64-bit integer strings. An update replaces writable attributes.

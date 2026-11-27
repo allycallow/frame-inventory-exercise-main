@@ -36,8 +36,14 @@ With the backend running, call the service from `src/backend` using `grpcurl`.
 
 ```sh
 grpcurl -plaintext -import-path src/main/proto -proto frameinventory/v1/frames.proto \
-  -d '{"page":0,"size":25}' localhost:9090 frameinventory.v1.FrameManagement/ListFrames
+  -d '{"page":0,"size":25,"statuses":["LIVE","PENDING"],"search":"london"}' \
+  localhost:9090 frameinventory.v1.FrameManagement/ListFrames
 ```
+
+`ListFrames` accepts any number of exact status codes in `statuses`. The `search`
+field matches a case-insensitive literal substring of the frame ID or town and
+ignores leading and trailing whitespace. Omit either field to skip that filter.
+The service applies both filters before pagination and orders by frame ID.
 
 The backend writes structured JSON logs to the console. Set
 `LOGGING_LEVEL_COM_GLOBAL_CT_FRAMEINVENTORY_FRAME=DEBUG` to include frame RPC

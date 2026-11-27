@@ -172,6 +172,56 @@ class FrameGrpcTests {
     }
 
     @Test
+    void filtersCurrentFramesByStatusAndSearchBeforePaginating() {
+        var idMatch = create("FRM-LONDON");
+        client.updateFrame(edit(idMatch.getFrameId(), idMatch.getVersionId(), "PENDING"));
+        create("FRM-1");
+        var blocked = create("FRM-2");
+        client.updateFrame(edit(blocked.getFrameId(), blocked.getVersionId(), "BLOCKED").toBuilder()
+            .setAttributes(blocked.getAttributes().toBuilder().setStatus("BLOCKED"))
+            .build());
+        create("FRM-3");
+        delete("FRM-3", null);
+        client.createFrame(CreateFrameRequest.newBuilder().setFrameId("FRM-4")
+            .setAttributes(FrameData.newBuilder().setStatus("LIVE")).build());
+
+        var request = ListFramesRequest.newBuilder().addStatuses("LIVE").addStatuses("PENDING")
+            .setSearch("  LoNd  ").setSize(1);
+        var first = client.listFrames(request.build());
+        assertThat(first.getItemsList()).extracting(Frame::getFrameId).containsExactly("FRM-1");
+        assertThat(first.getHasNext()).isTrue();
+        var second = client.listFrames(request.setPage(1).build());
+        assertThat(second.getItemsList()).extracting(Frame::getFrameId).containsExactly("FRM-LONDON");
+        assertThat(second.getHasNext()).isFalse();
+
+        assertThat(client.listFrames(ListFramesRequest.newBuilder().addStatuses("LIVE").setSearch(" ").build())
+            .getItemsList()).extracting(Frame::getFrameId).containsExactly("FRM-1", "FRM-4");
+        assertThat(client.listFrames(ListFramesRequest.newBuilder().setSearch("lond").build()).getItemsList())
+            .extracting(Frame::getFrameId).containsExactly("FRM-1", "FRM-2", "FRM-LONDON");
+    }
+
+    @Test
+    void searchesForPatternCharactersLiterally() {
+        create("FRM-%");
+        create("FRM-_");
+        create("FRM-!");
+        create("FRM-X");
+
+        for (var character : List.of("%", "_", "!")) {
+            var results = client.listFrames(ListFramesRequest.newBuilder().setSearch(character).build());
+            assertThat(results.getItemsList()).extracting(Frame::getFrameId).containsExactly("FRM-" + character);
+        }
+    }
+
+    @Test
+    void rejectsNullCharactersInListFilters() throws Exception {
+        assertThat(invalidFields(() -> client.listFrames(ListFramesRequest.newBuilder().setSearch("\0").build())))
+            .containsExactly("search");
+        assertError(Status.Code.INVALID_ARGUMENT, "One or more request values are invalid.",
+            () -> client.listFrames(ListFramesRequest.newBuilder().addStatuses("LIVE\0").build()));
+    }
+
+    @Test
     @ExtendWith(OutputCaptureExtension.class)
     void logsUnexpectedRpcFailureWithCorrelationIdAndCause(CapturedOutput output) {
         var correlationId = "069aa868-7443-4787-8b47-e56fbc6077dd";

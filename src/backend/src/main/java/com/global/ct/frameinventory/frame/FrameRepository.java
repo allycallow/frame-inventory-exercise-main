@@ -51,14 +51,26 @@ class FrameRepository {
         this.jdbc = jdbc;
     }
 
-    List<FrameVersion> list(long offset, int limit) {
-        return jdbc.sql(SELECT_VERSION + """
-            WHERE v.is_current
+    List<FrameVersion> list(long offset, int limit, List<String> statuses, String search) {
+        var sql = new StringBuilder(SELECT_VERSION).append("WHERE v.is_current\n");
+        var params = new MapSqlParameterSource().addValue("limit", limit).addValue("offset", offset);
+        if (!statuses.isEmpty()) {
+            sql.append("AND v.status IN (:statuses)\n");
+            params.addValue("statuses", statuses);
+        }
+        if (!search.isEmpty()) {
+            sql.append("""
+                AND (v.frame_id ILIKE :search ESCAPE '!' OR t.town_name ILIKE :search ESCAPE '!')
+                """);
+            var escapedSearch = search.replace("!", "!!").replace("%", "!%").replace("_", "!_");
+            params.addValue("search", "%" + escapedSearch + "%");
+        }
+        sql.append("""
             ORDER BY v.frame_id
             LIMIT :limit OFFSET :offset
-            """)
-            .param("limit", limit)
-            .param("offset", offset)
+            """);
+        return jdbc.sql(sql.toString())
+            .paramSource(params)
             .query(FrameRepository::mapVersion)
             .list();
     }

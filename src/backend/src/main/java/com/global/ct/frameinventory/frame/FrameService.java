@@ -33,8 +33,8 @@ class FrameService {
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
-    FramePage list(int page, int size) {
-        var matches = frames.list((long) page * size, size + 1);
+    FramePage list(int page, int size, List<String> statuses, String search) {
+        var matches = frames.list((long) page * size, size + 1, statuses, search);
         boolean hasNext = matches.size() > size;
         LOGGER.atInfo()
             .addKeyValue("page", page)

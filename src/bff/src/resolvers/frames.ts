@@ -75,6 +75,8 @@ export function createFrameResolvers(client: FrameClient) {
       frames(_parent, args, { correlationId }) {
         const page = args.page ?? undefined
         const size = args.size ?? undefined
+        const statuses = args.statuses ?? undefined
+        const search = args.search ?? undefined
 
         if (page !== undefined && page < 0) {
           throw badInput('Page must be 0 or greater.')
@@ -84,10 +86,18 @@ export function createFrameResolvers(client: FrameClient) {
           throw badInput('Size must be between 1 and 50.')
         }
 
+        if (statuses?.some((status) => status.includes('\0'))) {
+          throw badInput('Status codes must not contain null characters.')
+        }
+
+        if (search?.includes('\0')) {
+          throw badInput('Search must not contain null characters.')
+        }
+
         return callGrpc(
           'ListFrames',
           client.listFrames.bind(client),
-          { page, size },
+          { page, size, statuses, search },
           correlationId,
           true,
         )

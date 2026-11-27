@@ -1,5 +1,16 @@
 type Query {
-  frames(page: Int, size: Int): FramePage!
+  frames(
+    page: Int
+    size: Int
+    """
+    Match any of these exact status codes. Omit or leave empty to allow all statuses.
+    """
+    statuses: [String!]
+    """
+    Match a case-insensitive literal substring of the frame ID or town.
+    """
+    search: String
+  ): FramePage!
   frame(frameId: ID!): Frame
   frameHistory(frameId: ID!): [Frame!]!
   importJob(jobId: ID!): ImportJob!

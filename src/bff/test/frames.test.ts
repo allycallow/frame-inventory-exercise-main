@@ -268,7 +268,7 @@ test('exports resolver latency by schema field for queries and mutations', async
   }
 })
 
-test('frames requests the specified gRPC page and returns frames with pagination metadata', async () => {
+test('frames forwards filters and returns frames with pagination metadata', async () => {
   const frame = {
     frameId: 'FRAME-001',
     versionId: '9007199254740993',
@@ -306,7 +306,7 @@ test('frames requests the specified gRPC page and returns frames with pagination
     const response = await server.executeOperation({
       query: `
         query {
-          frames(page: 1, size: 1) {
+          frames(page: 1, size: 1, statuses: ["LIVE", "PENDING"], search: " Lon%_ ") {
             items {
               frameId
               versionId
@@ -325,7 +325,7 @@ test('frames requests the specified gRPC page and returns frames with pagination
 
     expect(client.listFrames).toHaveBeenCalledTimes(1)
     expect(client.listFrames).toHaveBeenCalledWith(
-      { page: 1, size: 1 },
+      { page: 1, size: 1, statuses: ['LIVE', 'PENDING'], search: ' Lon%_ ' },
       expect.any(Metadata),
       { deadline: expect.any(Number) },
       expect.any(Function),
@@ -346,6 +346,14 @@ test.each([
   { args: { page: -1 }, message: 'Page must be 0 or greater.' },
   { args: { size: 0 }, message: 'Size must be between 1 and 50.' },
   { args: { size: 51 }, message: 'Size must be between 1 and 50.' },
+  {
+    args: { statuses: ['LIVE', 'PENDING\0'] },
+    message: 'Status codes must not contain null characters.',
+  },
+  {
+    args: { search: 'London\0' },
+    message: 'Search must not contain null characters.',
+  },
 ])('frames rejects $args before calling gRPC', async ({ args, message }) => {
   const client = mockClient()
   const server = createServer(client)
@@ -353,8 +361,8 @@ test.each([
   try {
     const response = await server.executeOperation({
       query: `
-        query ($page: Int, $size: Int) {
-          frames(page: $page, size: $size) {
+        query ($page: Int, $size: Int, $statuses: [String!], $search: String) {
+          frames(page: $page, size: $size, statuses: $statuses, search: $search) {
             page
           }
         }
@@ -403,9 +411,16 @@ test('frames retries an unavailable gRPC call with the same deadline and correla
     )
 
     expect(client.listFrames).toHaveBeenCalledTimes(2)
-    const [, firstMetadata, firstOptions] = client.listFrames.mock.calls[0]
+    const [firstRequest, firstMetadata, firstOptions] =
+      client.listFrames.mock.calls[0]
     const [, retryMetadata, retryOptions] = client.listFrames.mock.calls[1]
     expect(firstMetadata.get('x-correlation-id')).toEqual([correlationId])
+    expect(firstRequest).toStrictEqual({
+      page: undefined,
+      size: undefined,
+      statuses: undefined,
+      search: undefined,
+    })
     expect(retryMetadata.get('x-correlation-id')).toEqual(
       firstMetadata.get('x-correlation-id'),
     )
