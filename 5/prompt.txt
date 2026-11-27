@@ -1,0 +1,5 @@
+pick up https://linear.app/upfrontbeats/issue/GLO-64/remove-the-duplicate-frame-statuses-list-in-the-frames-list
+
+---
+
+nice open PR

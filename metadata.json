@@ -3,7 +3,7 @@
   "checkpoint_id": "01M8EF546E1KD6E2SD8D7EGJCR",
   "strategy": "manual-commit",
   "branch": "alex/glo-63-add-an-edit-button-to-the-frame-detail-page",
-  "checkpoints_count": 22,
+  "checkpoints_count": 23,
   "files_touched": [
     "src/frontend/package-lock.json",
     "src/frontend/package.json",
@@ -48,14 +48,21 @@
       "compact_transcript": "/4/transcript.jsonl",
       "content_hash": "/4/content_hash.txt",
       "prompt": "/4/prompt.txt"
+    },
+    {
+      "metadata": "/5/metadata.json",
+      "transcript": "/5/full.jsonl",
+      "compact_transcript": "/5/transcript.jsonl",
+      "content_hash": "/5/content_hash.txt",
+      "prompt": "/5/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 541,
-    "cache_creation_tokens": 166178,
-    "cache_read_tokens": 14123760,
-    "output_tokens": 24752,
-    "api_call_count": 94
+    "input_tokens": 713,
+    "cache_creation_tokens": 217752,
+    "cache_read_tokens": 14955309,
+    "output_tokens": 27881,
+    "api_call_count": 114
   },
   "redaction": {
     "replacements": 231,
