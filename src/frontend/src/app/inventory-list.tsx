@@ -2,7 +2,8 @@
 
 import { useQuery } from '@apollo/client/react'
 import Link from 'next/link'
-import { useState, type FormEvent, type ReactElement } from 'react'
+import { useState, type ChangeEvent, type ReactElement } from 'react'
+import { useForm } from 'react-hook-form'
 import { FramesDocument, type FramesQueryVariables } from '../generated/graphql'
 import { frameDetailHref } from './frame-route'
 import { errorMessage, label } from './inventory-api'
@@ -23,12 +24,12 @@ export function InventoryList({ active, onEdit }: {
   onEdit: (frameId: string) => void
 }): ReactElement {
   const [variables, setVariables] = useState<FramesQueryVariables>({ page: 0 })
+  const { register, handleSubmit, reset } = useForm({
+    defaultValues: { search: '', status: '' },
+  })
 
-  function submitSearch(event: FormEvent<HTMLFormElement>): void {
-    event.preventDefault()
-    const form = new FormData(event.currentTarget)
-    const search = String(form.get('search') ?? '').trim()
-    setVariables((current) => ({ ...current, page: 0, search: search || undefined }))
+  function submitSearch({ search }: { search: string }): void {
+    setVariables((current) => ({ ...current, page: 0, search: search.trim() || undefined }))
   }
 
   return (
@@ -37,26 +38,31 @@ export function InventoryList({ active, onEdit }: {
         className="card frame-filters"
         role="search"
         aria-label="Filter frames"
-        onSubmit={submitSearch}
-        onReset={() => setVariables({ page: 0 })}
+        onSubmit={handleSubmit(submitSearch)}
+        onReset={(event) => {
+          event.preventDefault()
+          reset()
+          setVariables({ page: 0 })
+        }}
       >
         <h2>Filters</h2>
         <label className="field">
           Frame ID or town
-          <input type="search" name="search" />
+          <input type="search" {...register('search')} />
         </label>
         <label className="field">
           Status
           <select
-            name="status"
-            onChange={(event) => {
-              const status = event.currentTarget.value
-              setVariables((current) => ({
-                ...current,
-                page: 0,
-                statuses: status ? [status] : undefined,
-              }))
-            }}
+            {...register('status', {
+              onChange: (event: ChangeEvent<HTMLSelectElement>) => {
+                const status = event.target.value
+                setVariables((current) => ({
+                  ...current,
+                  page: 0,
+                  statuses: status ? [status] : undefined,
+                }))
+              },
+            })}
           >
             <option value="">All statuses</option>
             {FRAME_STATUSES.map((status) => (

@@ -1,7 +1,8 @@
 'use client'
 
 import { useApolloClient } from '@apollo/client/react'
-import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react'
+import { useEffect, useRef, useState, type ReactElement } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
 import {
   CreateImportDocument,
   ImportStatusDocument,
@@ -15,6 +16,12 @@ import { StatusChip } from './inventory-list'
 
 type Upload = CreateImportMutation['createImportJob']
 type RowErrors = RowErrorsQuery['importRowErrors']
+type UploadFields = {
+  token: string
+  csv?: FileList
+  force: boolean
+  confirmed: boolean
+}
 
 const TERMINAL = new Set(['COMPLETED', 'COMPLETED_WITH_ERRORS', 'FAILED', 'EXPIRED'])
 const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i
@@ -36,14 +43,22 @@ export function InventoryImport({
   onTrack: (id: string) => void
 }): ReactElement {
   const client = useApolloClient()
-  const [token, setToken] = useState('')
-  const [file, setFile] = useState<File | null>(null)
-  const [force, setForce] = useState(false)
-  const [confirmed, setConfirmed] = useState(false)
-  const [lookup, setLookup] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [uploadError, setUploadError] = useState('')
-  const [lookupError, setLookupError] = useState('')
+  const {
+    control,
+    register,
+    handleSubmit,
+    resetField,
+    setError,
+    clearErrors,
+    formState: { errors: uploadErrors, isSubmitting },
+  } = useForm<UploadFields>({ defaultValues: { token: '', force: false, confirmed: false } })
+  const [token, force] = useWatch({ control, name: ['token', 'force'] })
+  const {
+    register: registerLookup,
+    handleSubmit: handleLookup,
+    formState: { errors: lookupErrors },
+  } = useForm({ defaultValues: { id: '' }, reValidateMode: 'onSubmit' })
+  const [retrying, setRetrying] = useState(false)
   const [retryUpload, setRetryUpload] = useState<{ upload: Upload; file: File } | null>(null)
   const [latest, setLatest] = useState<ImportJobSummaryFragment | null>(null)
   const [pollError, setPollError] = useState<{ id: string; message: string } | null>(null)
@@ -53,6 +68,10 @@ export function InventoryImport({
   const diagnosticsRequest = useRef<AbortController | null>(null)
   const [errorsMessage, setErrorsMessage] = useState<{ id: string; text: string } | null>(null)
 
+  const busy = isSubmitting || retrying
+  const tokenField = register('token')
+  const uploadError = uploadErrors.root?.upload?.message
+  const lookupError = lookupErrors.id?.message
   const authorized = TOKEN.test(token)
   const job = authorized && latest?.jobId === trackedId ? latest : null
   const rowErrors = authorized && errors?.id === trackedId ? errors.data : null
@@ -92,21 +111,23 @@ export function InventoryImport({
     }
   }, [client, trackedId, token, refresh])
 
-  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault()
+  async function submit({ token, csv, force, confirmed }: UploadFields): Promise<void> {
     if (busy) return
-    setUploadError('')
-    if (!TOKEN.test(token)) return setUploadError('Enter a valid local operator token.')
+    const file = csv?.[0]
+    if (!TOKEN.test(token)) {
+      return setError('root.upload', { message: 'Enter a valid local operator token.' })
+    }
     if (
       !file ||
       !file.name.toLowerCase().endsWith('.csv') ||
       file.size === 0 ||
       file.size > MAX_BYTES
     ) {
-      return setUploadError('Choose a non-empty CSV file up to 10 MiB.')
+      return setError('root.upload', { message: 'Choose a non-empty CSV file up to 10 MiB.' })
     }
-    if (force && !confirmed) return setUploadError('Confirm the forced overwrite before uploading.')
-    setBusy(true)
+    if (force && !confirmed) {
+      return setError('root.upload', { message: 'Confirm the forced overwrite before uploading.' })
+    }
     setRetryUpload(null)
     let created: Upload | undefined
     try {
@@ -119,15 +140,13 @@ export function InventoryImport({
       if (!data) throw new Error('Inventory service returned no result.')
       created = data.createImportJob
       setLatest(created.job)
-      setForce(false)
-      setConfirmed(false)
+      resetField('confirmed')
+      resetField('force')
       onTrack(created.job.jobId)
       await putCsv(created, file)
     } catch (error) {
-      setUploadError(errorMessage(error))
+      setError('root.upload', { message: errorMessage(error) })
       if (created) setRetryUpload({ upload: created, file })
-    } finally {
-      setBusy(false)
     }
   }
 
@@ -136,33 +155,28 @@ export function InventoryImport({
     const { upload, file: previousFile } = retryUpload
     if (Date.parse(upload.job.uploadExpiresAt) <= Date.now()) {
       setRetryUpload(null)
-      return setUploadError('This upload link expired. Start a new upload.')
+      return setError('root.upload', { message: 'This upload link expired. Start a new upload.' })
     }
-    setBusy(true)
-    setUploadError('')
+    setRetrying(true)
+    clearErrors('root.upload')
     try {
       await putCsv(upload, previousFile)
       setRetryUpload(null)
       setRefresh((value) => value + 1)
     } catch (error) {
-      setUploadError(errorMessage(error))
+      setError('root.upload', { message: errorMessage(error) })
     } finally {
-      setBusy(false)
+      setRetrying(false)
     }
   }
 
-  function openJob(event: FormEvent<HTMLFormElement>): void {
-    event.preventDefault()
-    const id = lookup.trim().toLowerCase()
-    if (!UUID.test(id)) return setLookupError('Enter a valid import job ID.')
-    setLookupError('')
+  function openJob({ id }: { id: string }): void {
     onTrack(id)
     setRefresh((value) => value + 1)
   }
 
-  function updateToken(value: string): void {
+  function clearAuthorizedResults(): void {
     diagnosticsRequest.current?.abort()
-    setToken(value)
     setLatest(null)
     setErrors(null)
     setErrorsMessage(null)
@@ -206,15 +220,18 @@ export function InventoryImport({
         <p className="subtle">
           DELTA applies rows in the file. Frames absent from the file stay as they are.
         </p>
-        <form className="fields" onSubmit={submit}>
+        <form className="fields" onSubmit={handleSubmit(submit)}>
           <label className="field">
             Local operator token
             <input
               type="password"
               autoComplete="off"
               disabled={busy}
-              value={token}
-              onChange={(event) => updateToken(event.target.value)}
+              {...tokenField}
+              onChange={(event) => {
+                clearAuthorizedResults()
+                void tokenField.onChange(event)
+              }}
             />
           </label>
           <label className="field file-field">
@@ -223,10 +240,7 @@ export function InventoryImport({
               type="file"
               accept=".csv,text/csv"
               disabled={busy}
-              onChange={(event) => {
-                setFile(event.target.files?.[0] ?? null)
-                setRetryUpload(null)
-              }}
+              {...register('csv', { onChange: () => setRetryUpload(null) })}
             />
             <span className="subtle">Up to 10 MiB and 10,000 data rows.</span>
           </label>
@@ -234,11 +248,7 @@ export function InventoryImport({
             <input
               type="checkbox"
               disabled={busy}
-              checked={force}
-              onChange={(event) => {
-                setForce(event.target.checked)
-                setConfirmed(false)
-              }}
+              {...register('force', { onChange: () => resetField('confirmed') })}
             />{' '}
             Force overwrite
           </label>
@@ -247,8 +257,7 @@ export function InventoryImport({
               <input
                 type="checkbox"
                 disabled={busy}
-                checked={confirmed}
-                onChange={(event) => setConfirmed(event.target.checked)}
+                {...register('confirmed')}
               />
               I understand this can replace newer edits and restore manually deleted frames.
             </label>
@@ -281,12 +290,16 @@ export function InventoryImport({
           <h2 id="job-title">Import job</h2>
           {job && <StatusChip value={job.status} />}
         </div>
-        <form className="lookup" onSubmit={openJob}>
+        <form className="lookup" onSubmit={handleLookup(openJob)}>
           <label className="field">
             Job ID
             <input
-              value={lookup}
-              onChange={(event) => setLookup(event.target.value)}
+              {...registerLookup('id', {
+                setValueAs: (value: string) => value.trim().toLowerCase(),
+                validate: (id) => UUID.test(id) || 'Enter a valid import job ID.',
+              })}
+              aria-invalid={Boolean(lookupError)}
+              aria-describedby={lookupError ? 'lookup-error' : undefined}
               placeholder="Paste a job ID"
             />
           </label>
@@ -295,7 +308,7 @@ export function InventoryImport({
           </button>
         </form>
         {lookupError && (
-          <p className="error" role="alert">
+          <p id="lookup-error" className="error" role="alert">
             {lookupError}
           </p>
         )}
@@ -303,10 +316,10 @@ export function InventoryImport({
           <p className="subtle">Upload a file or open an existing job to view its progress.</p>
         )}
         {trackedId && <p className="mono job-id">{trackedId}</p>}
-        {trackedId && !TOKEN.test(token) && (
+        {trackedId && !authorized && (
           <p className="subtle">Enter your local operator token to view this job.</p>
         )}
-        {trackedId && TOKEN.test(token) && !job && pollError?.id !== trackedId && (
+        {trackedId && authorized && !job && pollError?.id !== trackedId && (
           <p role="status">Loading job…</p>
         )}
         {pollError?.id === trackedId && (
