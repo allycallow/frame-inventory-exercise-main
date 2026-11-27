@@ -1,0 +1,60 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8E7GHRA9SET3XP2ZXG65NRJ",
+  "session_id": "01a21c5a-a691-7840-9d60-8eef9a3937fc",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-27T10:06:16.619853Z",
+  "branch": "alex/glo-41-setup-apollo-react-frontend",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "src/frontend/README.md",
+    "src/frontend/codegen.yml",
+    "src/frontend/package-lock.json",
+    "src/frontend/package.json",
+    "src/frontend/src/app/api/graphql/route.ts",
+    "src/frontend/src/app/apollo-provider.tsx",
+    "src/frontend/src/app/inventory-api.ts",
+    "src/frontend/src/app/inventory-import.graphql",
+    "src/frontend/src/app/inventory-import.tsx",
+    "src/frontend/src/app/inventory-list.graphql",
+    "src/frontend/src/app/inventory-list.tsx",
+    "src/frontend/src/app/layout.tsx",
+    "src/frontend/src/generated/graphql.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "3f4aaf7c7fc6",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 355,
+    "cache_creation_tokens": 122117,
+    "cache_read_tokens": 7363399,
+    "output_tokens": 19022,
+    "api_call_count": 81
+  },
+  "session_token_usage": {
+    "input_tokens": 355,
+    "cache_creation_tokens": 122117,
+    "cache_read_tokens": 7363399,
+    "output_tokens": 19022,
+    "api_call_count": 81
+  },
+  "redaction": {
+    "replacements": 0,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 1
+  }
+}

@@ -3,15 +3,18 @@
   "checkpoint_id": "01M8E7GHRA9SET3XP2ZXG65NRJ",
   "strategy": "manual-commit",
   "branch": "alex/glo-41-setup-apollo-react-frontend",
-  "checkpoints_count": 6,
+  "checkpoints_count": 7,
   "files_touched": [
     "src/frontend/README.md",
     "src/frontend/codegen.yml",
     "src/frontend/package-lock.json",
     "src/frontend/package.json",
     "src/frontend/src/app/api/graphql/route.ts",
+    "src/frontend/src/app/apollo-provider.tsx",
     "src/frontend/src/app/inventory-api.ts",
+    "src/frontend/src/app/inventory-import.graphql",
     "src/frontend/src/app/inventory-import.tsx",
+    "src/frontend/src/app/inventory-list.graphql",
     "src/frontend/src/app/inventory-list.tsx",
     "src/frontend/src/app/layout.tsx",
     "src/frontend/src/generated/graphql.ts"
@@ -23,14 +26,21 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 93,
-    "cache_creation_tokens": 28936,
-    "cache_read_tokens": 7309073,
-    "output_tokens": 8757,
-    "api_call_count": 31
+    "input_tokens": 448,
+    "cache_creation_tokens": 151053,
+    "cache_read_tokens": 14672472,
+    "output_tokens": 27779,
+    "api_call_count": 112
   },
   "redaction": {
     "replacements": 52,

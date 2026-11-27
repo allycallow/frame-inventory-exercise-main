@@ -1,0 +1,5 @@
+can you implement https://linear.app/upfrontbeats/issue/GLO-41/setup-apollo-react-frontend
+
+---
+
+can you open PR
