@@ -22,19 +22,3 @@ query Frames($page: Int!, $statuses: [String!], $search: String) {
     }
   }
 }
-
-query FrameHistory($id: ID!) {
-  frameHistory(frameId: $id) {
-    versionId
-    validFrom
-    validTo
-    current
-    changeSource
-    closedByChangeSource
-    importJobId
-    attributes {
-      status
-      statusReason
-    }
-  }
-}

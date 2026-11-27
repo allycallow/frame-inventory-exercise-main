@@ -1,9 +1,11 @@
 'use client'
 
 import { useQuery } from '@apollo/client/react'
-import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react'
-import { FrameHistoryDocument, FramesDocument, type FramesQueryVariables } from '../generated/graphql'
-import { dateTime, errorMessage, label } from './inventory-api'
+import Link from 'next/link'
+import { useState, type FormEvent, type ReactElement } from 'react'
+import { FramesDocument, type FramesQueryVariables } from '../generated/graphql'
+import { frameDetailHref } from './frame-route'
+import { errorMessage, label } from './inventory-api'
 
 const FRAME_STATUSES = ['LIVE', 'PENDING', 'MAINTENANCE', 'BLOCKED', 'DRAFT']
 
@@ -16,101 +18,9 @@ export function StatusChip({ value }: { value: string }): ReactElement {
   )
 }
 
-function HistoryDialog({
-  frameId,
-  onClose,
-  onJob,
-}: {
-  frameId: string
-  onClose: () => void
-  onJob: (jobId: string) => void
-}): ReactElement {
-  const dialog = useRef<HTMLDialogElement>(null)
-  const { data, loading, error } = useQuery(FrameHistoryDocument, {
-    variables: { id: frameId },
-    fetchPolicy: 'network-only',
-    ssr: false,
-  })
-  useEffect(() => {
-    const modal = dialog.current
-    modal?.showModal()
-    return () => modal?.close()
-  }, [])
-
-  return (
-    <dialog
-      ref={dialog}
-      className="history-dialog"
-      aria-labelledby="history-title"
-      onCancel={onClose}
-    >
-      <header className="drawer-header">
-        <div>
-          <p className="subtle mono">{frameId}</p>
-          <h2 id="history-title">Version history</h2>
-        </div>
-        <button className="button button-secondary" onClick={onClose} autoFocus>
-          Close
-        </button>
-      </header>
-      {loading && (
-        <p className="panel-message" role="status">
-          Loading version history…
-        </p>
-      )}
-      {error && (
-        <p className="panel-message error" role="alert">
-          {errorMessage(error)}
-        </p>
-      )}
-      {data &&
-        (data.frameHistory.length ? (
-          <ol className="timeline">
-            {data.frameHistory.map((version) => (
-              <li key={version.versionId}>
-                <div className="history-heading">
-                  <strong>Version {version.versionId}</strong>
-                  <StatusChip value={version.attributes.status} />
-                </div>
-                <p className="subtle">
-                  {dateTime(version.validFrom)} ·{' '}
-                  {version.current
-                    ? 'Current'
-                    : version.validTo
-                      ? `Ended ${dateTime(version.validTo)}`
-                      : 'Historical'}
-                </p>
-                {version.changeSource && <p>{label(version.changeSource)}</p>}
-                {version.closedByChangeSource && (
-                  <p>Closed by {label(version.closedByChangeSource).toLowerCase()}</p>
-                )}
-                {version.attributes.statusReason && <p>{version.attributes.statusReason}</p>}
-                {version.importJobId && (
-                  <button
-                    className="text-button job-link"
-                    onClick={() => {
-                      if (version.importJobId) onJob(version.importJobId)
-                    }}
-                  >
-                    Import job <span className="mono">{version.importJobId}</span>
-                  </button>
-                )}
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="panel-message">No versions found.</p>
-        ))}
-    </dialog>
-  )
-}
-
-export function InventoryList({
-  onEdit,
-  onJob,
-}: {
+export function InventoryList({ active, onEdit }: {
+  active: boolean
   onEdit: (frameId: string) => void
-  onJob: (jobId: string) => void
 }): ReactElement {
   const [variables, setVariables] = useState<FramesQueryVariables>({ page: 0 })
 
@@ -161,33 +71,35 @@ export function InventoryList({
         </div>
       </form>
       <FrameResults
+        active={active}
+        onEdit={onEdit}
         variables={variables}
         onPage={(page) => setVariables((current) => ({ ...current, page }))}
-        onEdit={onEdit}
-        onJob={onJob}
       />
     </section>
   )
 }
 
 function FrameResults({
+  active,
   variables,
   onPage,
   onEdit,
-  onJob,
 }: {
+  active: boolean
   variables: FramesQueryVariables
   onPage: (page: number) => void
   onEdit: (frameId: string) => void
-  onJob: (jobId: string) => void
 }): ReactElement {
   const { page, search, statuses } = variables
-  const [selected, setSelected] = useState<string | null>(null)
   const { data, loading, error, refetch } = useQuery(FramesDocument, {
     variables,
+    skip: !active,
     fetchPolicy: 'network-only',
     ssr: false,
   })
+
+  if (!active) return <></>
 
   if (loading)
     return (
@@ -239,13 +151,9 @@ function FrameResults({
               {items.map(({ frameId, attributes: frame }) => (
                 <tr key={frameId}>
                   <th scope="row">
-                    <button
-                      className="text-button mono"
-                      onClick={() => setSelected(frameId)}
-                      aria-label={`View history for ${frameId}`}
-                    >
+                    <Link className="text-button mono" href={frameDetailHref(frameId)}>
                       {frameId}
-                    </button>
+                    </Link>
                   </th>
                   <td>
                     {frame.location
@@ -295,16 +203,6 @@ function FrameResults({
             </button>
           </div>
         </footer>
-      )}
-      {selected && (
-        <HistoryDialog
-          frameId={selected}
-          onClose={() => setSelected(null)}
-          onJob={(id) => {
-            setSelected(null)
-            onJob(id)
-          }}
-        />
       )}
     </>
   )
