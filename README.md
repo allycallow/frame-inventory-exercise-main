@@ -32,6 +32,186 @@ If you have `just` installed, run `just` to list the available recipes.
 
 - [Application source](./src/README.md) contains the Spring Boot backend, Apollo Server BFF, and Next.js frontend.
 - [Design system](./design-system/README.md) contains the prototype, sample frame data, and visual conventions for the exercise.
+- [Design documents](./docs/designs/) cover the inventory schema, frame management API, and CSV import.
+
+## Design Decisions & Trade-offs
+
+### Scope
+
+All four required features are delivered: add a frame, edit a frame, bulk CSV
+upload, and version history. Search, status filtering, and a frame detail view
+were added on top. Version history shows field-level changes between consecutive
+versions. Change authorship and `FULL_SNAPSHOT` imports remain [follow-ups](#follow-ups).
+
+### Datastore: PostgreSQL instead of MongoDB
+
+The exercise offered MongoDB or PostgreSQL. I chose PostgreSQL because the
+import depends on set-based SQL that a document
+store would make much harder:
+
+- Rows stream into `UNLOGGED` staging tables keyed by job, attempt, and row
+  number. They are cheap to write and are discarded after the apply.
+- One transaction compares every staged row with the current version, decides
+  each outcome, and then upserts lookups with `INSERT … ON CONFLICT`. It closes
+  the replaced versions with `UPDATE … FROM`, inserts new versions with
+  `jsonb_populate_record`, and records row errors.
+- Partial unique indexes, `CHECK` constraints, row locks, and advisory locks
+  enforce the versioning invariants inside the database.
+
+The trade-off is a fixed relational schema and migrations. The frame shape from
+the legacy export is stable and relational, so that is a good fit.
+
+### Domain model: versioned rows are the audit trail
+
+Each frame has a stable identity in `frame` and an append-only history in
+`frame_version`. Every version carries `valid_from`/`valid_to`, and a partial
+unique index enforces at most one current version per frame. An edit or an
+import closes the current row and inserts a new one. A delete closes the row
+without a successor, and `closed_by_change_source` records why.
+
+- **Why:** history is the same data the application reads, so the audit trail
+  cannot drift from the inventory. Database constraints, not just application
+  code, enforce the invariants.
+- **Cost:** every change copies the whole row, and "what changed" must be
+  derived by comparing consecutive versions.
+- Location (country → region → town → postcode) and format are normalised into
+  lookup tables. External references (Broadsign, pricing) and linked frames are
+  versioned child tables rather than JSON, so they stay queryable.
+
+### Concurrent edits
+
+An edit sends the version it started from. The backend locks the frame row and
+rejects the edit if a newer version exists, and the UI offers to reload the
+latest version. A shared transaction-scoped lock is already taken by every
+writer so that a future full-snapshot import can take it exclusively.
+
+### Service boundaries: Next.js → GraphQL BFF → Spring Boot gRPC
+
+- **Why:** the frontend gets a GraphQL API shaped around its screens, the
+  backend keeps a strict typed contract, and domain logic lives in one place.
+- **Cost:** an extra network hop and two schemas (`.proto` and `.gql`) to keep
+  in step. Code generation on both sides limits drift.
+
+### Search: native PostgreSQL instead of OpenSearch
+
+Search and filtering use plain PostgreSQL queries over current versions. Search
+is a case-insensitive substring match on frame ID or town, with an optional
+status filter. The original scaffold included OpenSearch, and I removed it.
+Within the time box, it added complexity that basic ID search and filters did
+not justify. At this inventory size a second datastore adds a sync pipeline,
+consistency questions, and another service to run, without improving the user
+experience.
+
+- **Cost:** a leading-wildcard `ILIKE` cannot use a B-tree index, so search
+  scans current rows. That is fine at ~1,300 frames. The next step is a
+  `pg_trgm` index, which still needs no new infrastructure.
+- **If search outgrew PostgreSQL:** I would stream changes into OpenSearch with
+  Kafka change data capture from `frame_version`, so the index follows committed
+  writes without dual writes in the application. A scheduled Prefect flow would
+  reconcile the index against PostgreSQL and repair drift.
+
+### CSV import: offloaded, retry-safe, and heavier than this file needs
+
+The browser uploads directly to S3 with a presigned URL. The S3 notification
+goes to SQS, and Spring Boot starts a Temporal workflow. A Python worker
+orchestrates the workflow and calls the backend's `Stage` and `Apply` RPCs.
+`Stage` streams the CSV from S3, validates each row, and inserts rows into
+staging tables in batches of 200. `Apply` then validates and applies them in one
+SQL transaction.
+
+- **Why:**
+  - The upload never passes through the API. S3 receives the file, and parsing
+    runs asynchronously in the workflow rather than in a user request.
+  - The file is streamed rather than loaded into memory.
+  - Temporal retries each step, and the apply is idempotent. Replaying the same
+    file creates no new versions, and a retried attempt cannot apply twice.
+- **Why it is fast:** the database work is set-based rather than row by row.
+  - Staging uses batched inserts into `UNLOGGED` tables, which skip the
+    write-ahead log.
+  - The apply runs a fixed number of SQL statements whatever the file size, so
+    there are no per-row round trips.
+  - Each distinct location and format is resolved once.
+  - Rows whose content is unchanged are skipped without writing a new version.
+- **Limits:** the backend accepts files up to 10 MiB and 10,000 rows. Larger
+  files would need the limits raised and the apply measured, because it runs as
+  one transaction.
+- **Trade-off:** for the supplied ~1,300-row file, an HTTP upload parsed
+  in-process and applied with the same staging SQL would be enough, with far
+  fewer moving parts. I chose the production-shaped pipeline deliberately and
+  accept the extra local infrastructure.
+- **Conflict rules:**
+  - A newer source timestamp creates a version.
+  - The same timestamp with the same content changes nothing.
+  - An older timestamp, or the same timestamp with different content, is
+    rejected unless the operator chooses force overwrite.
+  - Invalid rows are rejected individually, and valid rows still apply.
+  - Manual edits are stamped with the current time, so an older export cannot
+    silently undo them.
+
+### `FULL_SNAPSHOT` imports: designed, not built
+
+A snapshot import would retire frames that are missing from the file. That is
+risky enough to need safety checks: a retirement circuit breaker, a malformed-row
+threshold, and per-scope watermarks. The design is in
+[docs/designs](./docs/designs/full-snapshot-import-design.md), and the API
+rejects the mode until those checks exist.
+
+### Observability
+
+Prometheus, Grafana, Loki, and the OpenTelemetry Collector provide dashboards,
+metrics, and centralised logs with correlation IDs. Business metrics include
+frame creates, updates, soft deletes, and import outcomes. The stack is the
+foundation for alerting, but no alert rules are configured yet.
+
+### Local-only shortcuts
+
+Import authentication is a shared local token that the backend accepts only
+over loopback from the co-located BFF. It is not production authentication.
+
+### Working with AI
+
+I tracked the work on a Linear board. Each feature, fix, and follow-up has a
+ticket with acceptance criteria, and each ticket maps to a branch
+(`alex/glo-<n>-…`) and a pull request. Commits reference their ticket. I broke
+the work into small, independent tickets and used multiple agents to implement
+them, each on its own ticket branch. I reviewed every change against the
+ticket's acceptance criteria before merging. GitHub Copilot code review acted
+as a second reviewer on pull requests across the backend, BFF, observability,
+and import pipeline work. I triaged its comments, applying some and declining
+others. The open backlog is the source of
+the [Follow-ups](#follow-ups) below.
+
+I wrote a design document before each significant piece of work and used the
+Elephant–Goldfish Model (EGM) to review it. Reviewers with fresh context
+examined each document through separate lenses, such as design, implementation
+readiness, and simplicity, before I implemented anything. Open questions and
+rejected alternatives are recorded in the documents. See, for example,
+[the bulk CSV import design](./docs/designs/bulk-csv-inventory-import-design.md)
+and its *Alternatives Considered* section.
+
+Each commit links to the captured Codex session through an
+`Entire-Checkpoint:` trailer. Entire stores the sessions as Git refs under
+`refs/entire/checkpoints/` rather than on a branch. Fetch them with
+`git fetch origin 'refs/entire/*:refs/entire/*'`.
+
+### Follow-ups
+
+- **Authentication and authorisation:** replace the local import token with real
+  user authentication and role-based permissions for editing and importing.
+  Record the acting user on each `frame_version` so history shows who made each
+  change.
+- **`FULL_SNAPSHOT` imports:** implement the documented design, including
+  scoped retirement guards, scope ordering, and replay protection.
+- **Feature flags and progressive delivery:** release risky changes such as
+  `FULL_SNAPSHOT` behind flags. Enable them per environment or import scope,
+  widen the rollout gradually, and turn them off without a redeploy.
+- **Prefect reconciliation:** schedule flows that compare derived data, such as
+  a future search index, against PostgreSQL and repair drift.
+- **Observability:** add Grafana alert rules for import failures, stuck jobs,
+  and error rates. Add distributed tracing with Grafana Tempo and more business
+  metrics from the Temporal workflow.
+- **CI:** run each GitHub Actions workflow only when its part of the repository
+  changes.
 
 ## Services
 
