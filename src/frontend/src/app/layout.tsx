@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from 'react'
+import { connection } from 'next/server'
 import { InventoryApolloProvider } from './apollo-provider'
 import { InventoryWorkspace } from './inventory-workspace'
 import './globals.css'
@@ -8,12 +9,15 @@ export const metadata = {
   icons: { icon: '/favicon.svg' },
 }
 
-export default function RootLayout({ children }: { children: ReactNode }): ReactElement {
+export default async function RootLayout({ children }: { children: ReactNode }): Promise<ReactElement> {
+  await connection()
+  const importsDisabled = process.env.LOCAL_IMPORTS_ENABLED === ''
+
   return (
     <html lang="en">
       <body>
         <InventoryApolloProvider>
-          <InventoryWorkspace>{children}</InventoryWorkspace>
+          <InventoryWorkspace importsDisabled={importsDisabled}>{children}</InventoryWorkspace>
         </InventoryApolloProvider>
       </body>
     </html>

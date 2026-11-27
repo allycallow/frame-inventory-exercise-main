@@ -33,7 +33,13 @@ export function FrameListActions(): ReactElement {
   )
 }
 
-export function InventoryWorkspace({ children }: { children: ReactNode }): ReactElement {
+export function InventoryWorkspace({
+  children,
+  importsDisabled,
+}: {
+  children: ReactNode
+  importsDisabled: boolean
+}): ReactElement {
   const showList = usePathname() === '/'
   const [area, setArea] = useState<'frames' | 'imports'>('frames')
   const [jobId, setJobId] = useState('')
@@ -106,10 +112,19 @@ export function InventoryWorkspace({ children }: { children: ReactNode }): React
             <div className="page-heading">
               <div>
                 <h1>Imports</h1>
-                <p className="subtle">Upload inventory CSV files and review import results.</p>
+                {!importsDisabled && (
+                  <p className="subtle">Upload inventory CSV files and review import results.</p>
+                )}
               </div>
             </div>
-            <InventoryImport trackedId={jobId} onTrack={setJobId} />
+            {importsDisabled ? (
+              <p className="card panel-message" role="status">
+                CSV imports are disabled because the local import token is missing.
+                Run <code>just up</code> from the repository root to enable them.
+              </p>
+            ) : (
+              <InventoryImport trackedId={jobId} onTrack={setJobId} />
+            )}
           </section>
         </main>
       </div>

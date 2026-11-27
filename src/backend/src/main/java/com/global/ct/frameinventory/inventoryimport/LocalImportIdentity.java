@@ -34,7 +34,9 @@ public final class LocalImportIdentity implements ServerInterceptor {
             @Value("${inventory.import.local-token:}") String token) {
         enabled = environment.acceptsProfiles(Profiles.of("local-import"));
         if (enabled && !TOKEN.matcher(token).matches()) {
-            throw new IllegalArgumentException("Local import requires a 64-character lowercase hex token");
+            throw new IllegalArgumentException(
+                    "INVENTORY_IMPORT_LOCAL_TOKEN must be 64 lowercase hexadecimal characters. "
+                            + "Generate one with `openssl rand -hex 32`.");
         }
         expectedAuthorization = ("Bearer " + token).getBytes(StandardCharsets.US_ASCII);
     }

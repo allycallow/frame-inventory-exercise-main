@@ -2,9 +2,10 @@
 default:
     @just --list
 
-# Build and start the full stack in the foreground.
-up:
-    docker compose up --build
+# Enable local CSV imports, then build and start the full stack.
+[positional-arguments]
+up *args:
+    sh scripts/compose-up.sh "$@"
 
 # Stop and remove the stack's containers and network.
 down:
