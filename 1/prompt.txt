@@ -1,0 +1,53 @@
+merged  #27
+
+---
+
+updat linear board
+
+---
+
+pick up https://linear.app/upfrontbeats/issue/GLO-42/frontend-add-a-frame when ready
+
+---
+
+nice open PR
+
+---
+
+merged #29
+
+---
+
+lets start this work when you are ready https://linear.app/upfrontbeats/issue/GLO-43/apollo-edit-a-frame
+
+---
+
+nice open PR
+
+---
+
+merged #31 update ticket
+
+---
+
+have a conflict in th ePR src/frontend/src/app/inventory-list.tsx
+
+---
+
+can you make it a route and not a query string for frame view
+
+---
+
+leave that work
+
+---
+
+Will do it another PR
+
+---
+
+nice PR good to go now?
+
+---
+
+merged #31 update ticket
