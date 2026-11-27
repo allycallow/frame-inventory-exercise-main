@@ -1,0 +1,52 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8EHS31D04M53HHEG37EEN8S",
+  "session_id": "01a21ceb-5542-7270-babd-138f1af61ea8",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-27T13:05:42.504526Z",
+  "branch": "alex/glo-65-give-frames-and-imports-their-own-routes-frames",
+  "checkpoints_count": 3,
+  "save_step_count": 4,
+  "files_touched": [
+    "README.md",
+    "src/frontend/src/app/inventory-list.test.tsx",
+    "src/frontend/src/app/inventory-list.tsx",
+    "src/frontend/src/app/inventory-workspace.tsx",
+    "src/frontend/src/app/layout.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "cc27b1c9cb09",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 135,
+    "cache_creation_tokens": 21149,
+    "cache_read_tokens": 4202392,
+    "output_tokens": 6454,
+    "api_call_count": 45
+  },
+  "session_token_usage": {
+    "input_tokens": 358,
+    "cache_creation_tokens": 102595,
+    "cache_read_tokens": 6510657,
+    "output_tokens": 16630,
+    "api_call_count": 82
+  },
+  "redaction": {
+    "replacements": 89,
+    "layers": {
+      "betterleaks": 5,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 84,
+      "credentialed_uri": 0,
+      "entropy": 9,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 3
+  }
+}
