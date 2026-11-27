@@ -1,0 +1,9 @@
+pick up https://linear.app/upfrontbeats/issue/GLO-63/add-an-edit-button-to-the-frame-detail-page
+
+---
+
+nice open PR
+
+---
+
+meged #36
