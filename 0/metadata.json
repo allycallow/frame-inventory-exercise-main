@@ -1,0 +1,62 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8ECYGBYPPJB3Y2T95EXST75",
+  "session_id": "01a21c24-368a-7113-b0ca-d5e549f87f60",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-27T11:41:16.856239Z",
+  "branch": "alex/glo-50-implement-react-hook-from",
+  "checkpoints_count": 8,
+  "save_step_count": 7,
+  "files_touched": [
+    "src/frontend/package-lock.json",
+    "src/frontend/package.json",
+    "src/frontend/src/app/frame-dialog.tsx",
+    "src/frontend/src/app/frame-form-input.test.ts",
+    "src/frontend/src/app/frame-form-input.ts",
+    "src/frontend/src/app/inventory-import.tsx",
+    "src/frontend/src/app/inventory-list.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "f8f7add7a703",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 114,
+    "cache_creation_tokens": 58881,
+    "cache_read_tokens": 13521082,
+    "output_tokens": 27734,
+    "api_call_count": 38
+  },
+  "session_token_usage": {
+    "input_tokens": 9336,
+    "cache_creation_tokens": 374861,
+    "cache_read_tokens": 66151003,
+    "output_tokens": 130383,
+    "api_call_count": 320,
+    "subagent_tokens": {
+      "input_tokens": 110738,
+      "cache_creation_tokens": 0,
+      "cache_read_tokens": 1064567,
+      "output_tokens": 11973,
+      "api_call_count": 34
+    },
+    "subagent_tokens_complete": true
+  },
+  "redaction": {
+    "replacements": 65,
+    "layers": {
+      "betterleaks": 4,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 38,
+      "credentialed_uri": 0,
+      "entropy": 23,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 74
+  }
+}
