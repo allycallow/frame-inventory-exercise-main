@@ -1,0 +1,54 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8E8RYMJJ7H71MF92MDV3434",
+  "session_id": "01a21c5a-a691-7840-9d60-8eef9a3937fc",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-27T10:28:22.461857Z",
+  "branch": "alex/glo-42-frontend-add-a-frame",
+  "checkpoints_count": 1,
+  "save_step_count": 2,
+  "files_touched": [
+    "src/frontend/jest.config.mjs",
+    "src/frontend/package.json",
+    "src/frontend/src/app/create-frame-dialog.tsx",
+    "src/frontend/src/app/create-frame-input.test.ts",
+    "src/frontend/src/app/create-frame-input.ts",
+    "src/frontend/src/app/globals.css",
+    "src/frontend/src/app/inventory-import.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "09163c812347",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 42,
+    "cache_creation_tokens": 5848,
+    "cache_read_tokens": 2490551,
+    "output_tokens": 1791,
+    "api_call_count": 14
+  },
+  "session_token_usage": {
+    "input_tokens": 607,
+    "cache_creation_tokens": 181309,
+    "cache_read_tokens": 20512449,
+    "output_tokens": 40901,
+    "api_call_count": 165
+  },
+  "redaction": {
+    "replacements": 0,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 5
+  }
+}
