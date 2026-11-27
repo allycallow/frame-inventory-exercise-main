@@ -1,0 +1,40 @@
+query Frames($page: Int!) {
+  frames(page: $page, size: 25) {
+    page
+    size
+    hasNext
+    items {
+      frameId
+      attributes {
+        status
+        environment
+        siteNo
+        address
+        location {
+          town
+          postcode
+        }
+        format {
+          technology
+          formatCode
+        }
+      }
+    }
+  }
+}
+
+query FrameHistory($id: ID!) {
+  frameHistory(frameId: $id) {
+    versionId
+    validFrom
+    validTo
+    current
+    changeSource
+    closedByChangeSource
+    importJobId
+    attributes {
+      status
+      statusReason
+    }
+  }
+}

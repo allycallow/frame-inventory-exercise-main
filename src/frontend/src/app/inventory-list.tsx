@@ -1,54 +1,9 @@
 'use client'
 
+import { useQuery } from '@apollo/client/react'
 import { useEffect, useRef, useState, type ReactElement } from 'react'
-import { dateTime, errorMessage, graphql, label } from './inventory-api'
-
-interface FrameRow {
-  frameId: string
-  attributes: {
-    status: string
-    environment: string | null
-    siteNo: string | null
-    address: string | null
-    location: { town: string; postcode: string } | null
-    format: { technology: string; formatCode: string } | null
-  }
-}
-
-interface FrameHistory {
-  versionId: string
-  validFrom: string
-  validTo: string | null
-  current: boolean
-  changeSource: string | null
-  closedByChangeSource: string | null
-  importJobId: string | null
-  attributes: { status: string; statusReason: string | null }
-}
-
-interface FramePage {
-  items: FrameRow[]
-  page: number
-  size: number
-  hasNext: boolean
-}
-
-type Result<T> = { data: T } | { error: string } | null
-
-const LIST = `query Frames($page: Int!) {
-  frames(page: $page, size: 25) {
-    page size hasNext
-    items { frameId attributes {
-      status environment siteNo address location { town postcode } format { technology formatCode }
-    } }
-  }
-}`
-const HISTORY = `query FrameHistory($id: ID!) {
-  frameHistory(frameId: $id) {
-    versionId validFrom validTo current changeSource closedByChangeSource importJobId
-    attributes { status statusReason }
-  }
-}`
+import { FrameHistoryDocument, FramesDocument } from '../generated/graphql'
+import { dateTime, errorMessage, label } from './inventory-api'
 
 export function StatusChip({ value }: { value: string }): ReactElement {
   return (
@@ -69,21 +24,16 @@ function HistoryDialog({
   onJob: (jobId: string) => void
 }): ReactElement {
   const dialog = useRef<HTMLDialogElement>(null)
-  const [history, setHistory] = useState<Result<FrameHistory[]>>(null)
+  const { data, loading, error } = useQuery(FrameHistoryDocument, {
+    variables: { id: frameId },
+    fetchPolicy: 'network-only',
+    ssr: false,
+  })
   useEffect(() => {
     const modal = dialog.current
     modal?.showModal()
-    const request = new AbortController()
-    graphql<{ frameHistory: FrameHistory[] }>(HISTORY, { id: frameId }, { signal: request.signal })
-      .then(({ frameHistory }) => setHistory({ data: frameHistory }))
-      .catch((error: unknown) => {
-        if (!request.signal.aborted) setHistory({ error: errorMessage(error) })
-      })
-    return () => {
-      request.abort()
-      modal?.close()
-    }
-  }, [frameId])
+    return () => modal?.close()
+  }, [])
 
   return (
     <dialog
@@ -101,21 +51,20 @@ function HistoryDialog({
           Close
         </button>
       </header>
-      {!history && (
+      {loading && (
         <p className="panel-message" role="status">
           Loading version history…
         </p>
       )}
-      {history && 'error' in history && (
+      {error && (
         <p className="panel-message error" role="alert">
-          {history.error}
+          {errorMessage(error)}
         </p>
       )}
-      {history &&
-        'data' in history &&
-        (history.data.length ? (
+      {data &&
+        (data.frameHistory.length ? (
           <ol className="timeline">
-            {history.data.map((version) => (
+            {data.frameHistory.map((version) => (
               <li key={version.versionId}>
                 <div className="history-heading">
                   <strong>Version {version.versionId}</strong>
@@ -156,40 +105,29 @@ function HistoryDialog({
 
 export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): ReactElement {
   const [page, setPage] = useState(0)
-  const [reload, setReload] = useState(0)
-  const [result, setResult] = useState<Result<FramePage>>(null)
   const [selected, setSelected] = useState<string | null>(null)
+  const { data, loading, error, refetch } = useQuery(FramesDocument, {
+    variables: { page },
+    fetchPolicy: 'network-only',
+    ssr: false,
+  })
 
-  useEffect(() => {
-    const request = new AbortController()
-    graphql<{ frames: FramePage }>(LIST, { page }, { signal: request.signal })
-      .then(({ frames }) => setResult({ data: frames }))
-      .catch((error: unknown) => {
-        if (!request.signal.aborted) setResult({ error: errorMessage(error) })
-      })
-    return () => request.abort()
-  }, [page, reload])
-
-  function navigate(next: number): void {
-    setResult(null)
-    setPage(next)
-  }
-
-  if (!result)
+  if (loading)
     return (
       <p className="card panel-message" role="status">
         Loading frames…
       </p>
     )
-  if ('error' in result) {
+  if (error || !data) {
     return (
       <div className="card panel-message" role="alert">
-        <p className="error">{result.error}</p>
+        <p className="error">
+          {error ? errorMessage(error) : 'Inventory service returned no result.'}
+        </p>
         <button
           className="button button-secondary"
           onClick={() => {
-            setResult(null)
-            setReload(reload + 1)
+            void refetch().catch(() => undefined)
           }}
         >
           Try again
@@ -198,7 +136,7 @@ export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): Re
     )
   }
 
-  const { items, hasNext, size } = result.data
+  const { items, hasNext, size } = data.frames
   return (
     <section className="card" aria-label="Inventory frames">
       {items.length ? (
@@ -258,14 +196,14 @@ export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): Re
             <button
               className="button button-secondary"
               disabled={page === 0}
-              onClick={() => navigate(page - 1)}
+              onClick={() => setPage(page - 1)}
             >
               Previous
             </button>
             <button
               className="button button-secondary"
               disabled={!hasNext}
-              onClick={() => navigate(page + 1)}
+              onClick={() => setPage(page + 1)}
             >
               Next
             </button>

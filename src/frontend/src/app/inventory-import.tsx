@@ -1,48 +1,20 @@
 'use client'
 
+import { useApolloClient } from '@apollo/client/react'
 import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react'
-import { dateTime, errorMessage, graphql, label } from './inventory-api'
+import {
+  CreateImportDocument,
+  ImportStatusDocument,
+  RowErrorsDocument,
+  type CreateImportMutation,
+  type ImportJobSummaryFragment,
+  type RowErrorsQuery,
+} from '../generated/graphql'
+import { dateTime, errorMessage, label } from './inventory-api'
 import { StatusChip } from './inventory-list'
 
-interface Job {
-  jobId: string
-  status: string
-  forceOverwrite: boolean
-  uploadExpiresAt: string
-  finishedAt: string | null
-  rowsRead: number
-  rowsApplied: number
-  rowsUnchanged: number
-  rowsRejected: number
-  failureCode: string | null
-}
-
-interface Upload {
-  job: Job
-  uploadUrl: string
-  uploadHeaders: { name: string; value: string }[]
-}
-
-interface RowErrors {
-  items: { rowNumber: number; code: string; frameId: string | null; detail: string }[]
-  page: number
-  hasNext: boolean
-}
-
-const JOB_FIELDS = `jobId status forceOverwrite uploadExpiresAt finishedAt
-  rowsRead rowsApplied rowsUnchanged rowsRejected failureCode`
-const CREATE = `mutation CreateImport($force: Boolean!) {
-  createImportJob(mode: DELTA, forceOverwrite: $force) {
-    job { ${JOB_FIELDS} }
-    uploadUrl uploadHeaders { name value }
-  }
-}`
-const STATUS = `query ImportStatus($id: ID!) { importJob(jobId: $id) { ${JOB_FIELDS} } }`
-const ROW_ERRORS = `query RowErrors($id: ID!, $page: Int!) {
-  importRowErrors(jobId: $id, page: $page, size: 25) {
-    items { rowNumber code frameId detail } page hasNext
-  }
-}`
+type Upload = CreateImportMutation['createImportJob']
+type RowErrors = RowErrorsQuery['importRowErrors']
 
 const TERMINAL = new Set(['COMPLETED', 'COMPLETED_WITH_ERRORS', 'FAILED', 'EXPIRED'])
 const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i
@@ -63,6 +35,7 @@ export function InventoryImport({
   trackedId: string
   onTrack: (id: string) => void
 }): ReactElement {
+  const client = useApolloClient()
   const [token, setToken] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [force, setForce] = useState(false)
@@ -72,7 +45,7 @@ export function InventoryImport({
   const [uploadError, setUploadError] = useState('')
   const [lookupError, setLookupError] = useState('')
   const [retryUpload, setRetryUpload] = useState<{ upload: Upload; file: File } | null>(null)
-  const [latest, setLatest] = useState<Job | null>(null)
+  const [latest, setLatest] = useState<ImportJobSummaryFragment | null>(null)
   const [pollError, setPollError] = useState<{ id: string; message: string } | null>(null)
   const [refresh, setRefresh] = useState(0)
   const [errors, setErrors] = useState<{ id: string; data: RowErrors } | null>(null)
@@ -92,12 +65,19 @@ export function InventoryImport({
     let timer: ReturnType<typeof setTimeout> | undefined
     async function poll(): Promise<void> {
       try {
-        const { importJob } = await graphql<{ importJob: Job }>(
-          STATUS,
-          { id: trackedId },
-          { token, signal: request.signal },
-        )
+        const { data } = await client.query({
+          query: ImportStatusDocument,
+          variables: { id: trackedId },
+          fetchPolicy: 'no-cache',
+          context: {
+            headers: { authorization: `Bearer ${token}` },
+            fetchOptions: { signal: request.signal },
+            queryDeduplication: false,
+          },
+        })
         if (request.signal.aborted) return
+        if (!data) throw new Error('Inventory service returned no result.')
+        const { importJob } = data
         setLatest(importJob)
         setPollError(null)
         if (!TERMINAL.has(importJob.status)) timer = setTimeout(poll, 2500)
@@ -110,7 +90,7 @@ export function InventoryImport({
       request.abort()
       clearTimeout(timer)
     }
-  }, [trackedId, token, refresh])
+  }, [client, trackedId, token, refresh])
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
@@ -130,8 +110,14 @@ export function InventoryImport({
     setRetryUpload(null)
     let created: Upload | undefined
     try {
-      const result = await graphql<{ createImportJob: Upload }>(CREATE, { force }, { token })
-      created = result.createImportJob
+      const { data } = await client.mutate({
+        mutation: CreateImportDocument,
+        variables: { force },
+        fetchPolicy: 'no-cache',
+        context: { headers: { authorization: `Bearer ${token}` } },
+      })
+      if (!data) throw new Error('Inventory service returned no result.')
+      created = data.createImportJob
       setLatest(created.job)
       setForce(false)
       setConfirmed(false)
@@ -192,12 +178,18 @@ export function InventoryImport({
     setErrorsBusy(true)
     setErrorsMessage(null)
     try {
-      const { importRowErrors } = await graphql<{ importRowErrors: RowErrors }>(
-        ROW_ERRORS,
-        { id: trackedId, page },
-        { token, signal: request.signal },
-      )
-      if (!request.signal.aborted) setErrors({ id: trackedId, data: importRowErrors })
+      const { data } = await client.query({
+        query: RowErrorsDocument,
+        variables: { id: trackedId, page },
+        fetchPolicy: 'no-cache',
+        context: {
+          headers: { authorization: `Bearer ${token}` },
+          fetchOptions: { signal: request.signal },
+          queryDeduplication: false,
+        },
+      })
+      if (!data) throw new Error('Inventory service returned no result.')
+      if (!request.signal.aborted) setErrors({ id: trackedId, data: data.importRowErrors })
     } catch (error) {
       if (!request.signal.aborted) {
         setErrorsMessage({ id: trackedId, text: errorMessage(error) })

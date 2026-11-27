@@ -4,11 +4,20 @@ The App Router shows the paginated frame inventory, version history, and DELTA
 imports. Frame history links to the durable import job summary, which remains
 available after row diagnostics expire.
 
-The browser sends GraphQL requests to the same-origin `/api/graphql` route.
+Apollo Client sends browser GraphQL requests to the same-origin `/api/graphql` route.
 Set `BFF_URL` to the BFF origin or full GraphQL URL. It defaults to
 `http://127.0.0.1:4000` and Compose uses `http://bff:4000`. The existing
 `/api/:path*` fallback forwards requests such as health checks to
 `BACKEND_URL` (default `http://localhost:8080`).
+
+## GraphQL operations
+
+Use Node.js 22.18 or newer for code generation. Keep operations in `.graphql`
+files under `src/`. Run `npm run codegen` after changing an operation or the
+BFF schema. Codegen reads `../bff/schema/*.gql` from the checkout, so it can
+run without a running BFF. Include `src/generated/graphql.ts` when committing
+schema or operation changes. Run `npm run codegen:check` to verify that the
+generated documents are current.
 
 ## Local development
 

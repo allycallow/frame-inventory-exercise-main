@@ -1,0 +1,44 @@
+fragment ImportJobSummary on ImportJob {
+  jobId
+  status
+  forceOverwrite
+  uploadExpiresAt
+  finishedAt
+  rowsRead
+  rowsApplied
+  rowsUnchanged
+  rowsRejected
+  failureCode
+}
+
+mutation CreateImport($force: Boolean!) {
+  createImportJob(mode: DELTA, forceOverwrite: $force) {
+    job {
+      ...ImportJobSummary
+    }
+    uploadUrl
+    uploadHeaders {
+      name
+      value
+    }
+  }
+}
+
+query ImportStatus($id: ID!) {
+  importJob(jobId: $id) {
+    ...ImportJobSummary
+  }
+}
+
+query RowErrors($id: ID!, $page: Int!) {
+  importRowErrors(jobId: $id, page: $page, size: 25) {
+    items {
+      rowNumber
+      code
+      frameId
+      detail
+    }
+    page
+    hasNext
+  }
+}

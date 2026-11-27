@@ -6,19 +6,33 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "codegen": "graphql-codegen --config codegen.yml",
+    "codegen:check": "npm run codegen -- --check"
   },
   "dependencies": {
+    "@apollo/client": "^4.3.8",
+    "@apollo/client-integration-nextjs": "^0.14.5",
+    "graphql": "^16.15.0",
     "next": "^16.0.0",
     "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "^8.0.0",
+    "@graphql-codegen/typed-document-node": "^8.0.0",
+    "@graphql-codegen/typescript-operations": "^7.0.3",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.0.0",
     "typescript": "^5.9.0"
+  },
+  "overrides": {
+    "graphql-config@6.0.0": {
+      "minimatch": "^11.0.1"
+    }
   }
 }
