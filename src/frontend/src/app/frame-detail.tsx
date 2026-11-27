@@ -5,12 +5,11 @@ import { useQuery } from '@apollo/client/react'
 import Link from 'next/link'
 import { useState, type ReactElement, type ReactNode } from 'react'
 import { FrameDetailDocument } from '../generated/graphql'
-import { FrameDialog } from './frame-dialog'
 import { HistoryDialog } from './frame-history'
 import { frameDetailHref } from './frame-route'
 import { errorMessage } from './inventory-api'
 import { StatusChip } from './inventory-list'
-import { useInventoryActions } from './inventory-workspace'
+import { useFrameDialog } from './inventory-workspace'
 
 function DetailFields({ title, fields }: {
   title: string
@@ -33,9 +32,8 @@ function DetailFields({ title, fields }: {
 
 export function FrameDetail({ frameId }: { frameId: string }): ReactElement {
   const [showHistory, setShowHistory] = useState(false)
-  const [showEdit, setShowEdit] = useState(false)
   const [savedFrameId, setSavedFrameId] = useState<string | null>(null)
-  const { showImports } = useInventoryActions()
+  const openFrameDialog = useFrameDialog()
   const { data, loading, error, refetch } = useQuery(FrameDetailDocument, {
     variables: { id: frameId },
     fetchPolicy: 'network-only',
@@ -50,7 +48,7 @@ export function FrameDetail({ frameId }: { frameId: string }): ReactElement {
 
   return (
     <>
-      <Link className="text-button detail-back" href="/">← Back to frames</Link>
+      <Link className="text-button detail-back" href="/frames">← Back to frames</Link>
       <div className="page-heading detail-heading">
         <h1>{frameId}</h1>
         {frame && (
@@ -61,7 +59,10 @@ export function FrameDetail({ frameId }: { frameId: string }): ReactElement {
             {frame.current && (
               <button className="button button-primary" onClick={() => {
                 setSavedFrameId(null)
-                setShowEdit(true)
+                openFrameDialog(frameId, (id) => {
+                  setSavedFrameId(id)
+                  void refetch().catch(() => undefined)
+                })
               }}>
                 Edit
               </button>
@@ -162,18 +163,6 @@ export function FrameDetail({ frameId }: { frameId: string }): ReactElement {
         <HistoryDialog
           frameId={frameId}
           onClose={() => setShowHistory(false)}
-          onJob={showImports}
-        />
-      )}
-      {showEdit && (
-        <FrameDialog
-          frameId={frameId}
-          onClose={() => setShowEdit(false)}
-          onSaved={(id) => {
-            setShowEdit(false)
-            setSavedFrameId(id)
-            void refetch().catch(() => undefined)
-          }}
         />
       )}
     </>

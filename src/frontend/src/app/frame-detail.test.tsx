@@ -7,14 +7,16 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { GraphQLError } from 'graphql'
 import {
   FrameDetailDocument,
+  FrameHistoryDocument,
   FrameForEditDocument,
   UpdateFrameDocument,
   type FrameDetailQuery,
   type UpdateFrameMutationVariables,
 } from '../generated/graphql'
 
-jest.doMock('./inventory-workspace', () => ({ useInventoryActions: () => ({ showImports: () => undefined }) }))
+jest.doMock('next/navigation', () => ({ usePathname: () => '/frames/FRAME-1' }))
 const { FrameDetail } = jest.requireActual<typeof import('./frame-detail')>('./frame-detail')
+const { InventoryWorkspace } = jest.requireActual<typeof import('./inventory-workspace')>('./inventory-workspace')
 
 // jsdom implements the open attribute but lacks the native dialog methods.
 Object.defineProperties(HTMLDialogElement.prototype, {
@@ -102,7 +104,9 @@ test('opens the prefilled edit dialog from details and refreshes after saving a 
       },
       detailResponse('Updated address'),
     ]}>
-      <FrameDetail frameId={frameId} />
+      <InventoryWorkspace>
+        <FrameDetail frameId={frameId} />
+      </InventoryWorkspace>
     </MockedProvider>,
   )
 
@@ -136,10 +140,45 @@ test('hides Edit when the service reports a soft-deleted frame as not found', as
       request: { query: FrameDetailDocument, variables: { id: frameId } },
       result: { errors: [new GraphQLError('Frame not found', { extensions: { code: 'NOT_FOUND' } })] },
     }]}>
-      <FrameDetail frameId={frameId} />
+      <InventoryWorkspace>
+        <FrameDetail frameId={frameId} />
+      </InventoryWorkspace>
     </MockedProvider>,
   )
 
   expect(await screen.findByText('Frame not found.')).toBeDefined()
   expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull()
+})
+
+test('links from version history to the import job route', async () => {
+  const jobId = '12345678-1234-1234-1234-123456789abc'
+  render(
+    <MockedProvider mocks={[
+      detailResponse('Original address'),
+      {
+        request: { query: FrameHistoryDocument, variables: { id: frameId } },
+        result: { data: { frameHistory: [{
+          __typename: 'Frame',
+          versionId: '1',
+          validFrom: '2026-11-27T12:00:00Z',
+          validTo: null,
+          current: true,
+          changeSource: 'IMPORT',
+          closedByChangeSource: null,
+          importJobId: jobId,
+          attributes: { __typename: 'FrameAttributes', status: 'LIVE', statusReason: null },
+        }] } },
+      },
+    ]}>
+      <InventoryWorkspace>
+        <FrameDetail frameId={frameId} />
+      </InventoryWorkspace>
+    </MockedProvider>,
+  )
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Version history' }))
+  const history = within(screen.getByRole('dialog', { name: 'Version history' }))
+
+  expect((await history.findByRole('link', { name: `Import job ${jobId}` })).getAttribute('href'))
+    .toBe(`/imports/${jobId}`)
 })

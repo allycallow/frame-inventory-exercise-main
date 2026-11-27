@@ -6,7 +6,7 @@ import { InventoryList } from './inventory-list'
 test('offers the status filters in lifecycle order after All statuses', () => {
   const markup = renderToStaticMarkup(
     <MockedProvider>
-      <InventoryList active={false} onEdit={() => undefined} />
+      <InventoryList onEdit={() => undefined} />
     </MockedProvider>,
   )
   const options = Array.from(markup.matchAll(/<option value="([^"]*)"/g), (option) => option[1])

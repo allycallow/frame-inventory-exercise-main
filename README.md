@@ -14,7 +14,10 @@ docker compose up --build
 
 Once PostgreSQL is healthy, the backend applies pending Flyway migrations during startup.
 You can start the stack with no `.env` or with a copy of `.env.example`.
-With an empty or missing token, the Imports tab explains how to enable CSV uploads.
+Open `/frames` to browse inventory or `/imports` to upload a CSV. The root URL
+redirects to `/frames`. Bookmark `/imports/<jobId>` to reopen an import job and
+enter the local operator token to see its results. If imports are disabled, the
+Imports page explains how to enable them.
 
 If you have `just` installed, run `just` to list the available recipes.
 

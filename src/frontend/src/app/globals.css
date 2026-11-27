@@ -79,25 +79,26 @@ button:disabled {
   display: grid;
   gap: 2px;
 }
-.workspace-rail button {
+.workspace-rail a {
   border: 0;
   border-radius: var(--radius);
   background: transparent;
   color: var(--gray-200);
   padding: var(--sp-1) 12px;
+  text-decoration: none;
   text-align: left;
   font-weight: var(--fw-medium);
 }
-.workspace-rail button:hover {
+.workspace-rail a:hover {
   color: var(--bg-default);
   background: var(--gray-1400);
 }
-.workspace-rail button[aria-current] {
+.workspace-rail a[aria-current] {
   color: var(--bg-default);
   background: color-mix(in srgb, var(--primary-main) 22%, var(--gray-1600));
   box-shadow: inset 2px 0 var(--primary-light);
 }
-.workspace-rail button:focus-visible {
+.workspace-rail a:focus-visible {
   outline-color: var(--primary-light);
 }
 main {
@@ -148,6 +149,7 @@ main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  text-decoration: none;
   font-size: 13px;
   font-weight: var(--fw-medium);
   white-space: nowrap;
@@ -164,7 +166,8 @@ main {
   border-color: var(--border-default);
   color: var(--primary-main);
 }
-.button-secondary:hover:enabled {
+.button-secondary:hover:enabled,
+a.button-secondary:hover {
   border-color: var(--primary-main);
   background: var(--blue-50);
 }

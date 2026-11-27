@@ -1,11 +1,5 @@
-import type { ReactElement } from 'react'
-import { FrameListActions } from './inventory-workspace'
+import { redirect } from 'next/navigation'
 
-export default function Home(): ReactElement {
-  return (
-    <div className="page-heading">
-      <h1>Frames</h1>
-      <FrameListActions />
-    </div>
-  )
+export default function Home(): never {
+  redirect('/frames')
 }

@@ -23,10 +23,12 @@ import { errorMessage, label } from './inventory-api'
 
 export function FrameDialog({
   frameId,
+  refetchFrameList,
   onClose,
   onSaved,
 }: {
   frameId?: string
+  refetchFrameList: boolean
   onClose: () => void
   onSaved: (frameId: string) => void
 }): ReactElement {
@@ -42,12 +44,9 @@ export function FrameDialog({
           ssr: false,
         },
   )
-  const [createFrame] = useMutation(CreateFrameDocument, {
-    refetchQueries: [FramesDocument],
-  })
-  const [updateFrame] = useMutation(UpdateFrameDocument, {
-    refetchQueries: [FramesDocument],
-  })
+  const refetchQueries = refetchFrameList ? [FramesDocument] : []
+  const [createFrame] = useMutation(CreateFrameDocument, { refetchQueries })
+  const [updateFrame] = useMutation(UpdateFrameDocument, { refetchQueries })
 
   const editing = frameId !== undefined
   const current = (details.data ?? details.previousData)?.frame

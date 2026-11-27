@@ -1,19 +1,19 @@
 'use client'
 
 import { useQuery } from '@apollo/client/react'
+import Link from 'next/link'
 import { useEffect, useRef, type ReactElement } from 'react'
 import { FrameHistoryDocument } from '../generated/graphql'
 import { dateTime, errorMessage, label } from './inventory-api'
 import { StatusChip } from './inventory-list'
+import { importJobHref } from './imports/import-route'
 
 export function HistoryDialog({
   frameId,
   onClose,
-  onJob,
 }: {
   frameId: string
   onClose: () => void
-  onJob: (jobId: string) => void
 }): ReactElement {
   const dialog = useRef<HTMLDialogElement>(null)
   const { data, loading, error } = useQuery(FrameHistoryDocument, {
@@ -76,14 +76,13 @@ export function HistoryDialog({
                 )}
                 {version.attributes.statusReason && <p>{version.attributes.statusReason}</p>}
                 {version.importJobId && (
-                  <button
+                  <Link
                     className="text-button job-link"
-                    onClick={() => {
-                      if (version.importJobId) onJob(version.importJobId)
-                    }}
+                    href={importJobHref(version.importJobId)}
+                    onNavigate={onClose}
                   >
                     Import job <span className="mono">{version.importJobId}</span>
-                  </button>
+                  </Link>
                 )}
               </li>
             ))}

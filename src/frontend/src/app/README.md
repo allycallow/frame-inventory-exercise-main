@@ -1,6 +1,7 @@
 # App Router
 
-The home route displays a paginated frame list and a DELTA import workspace.
+The home route redirects to the paginated frame list at `/frames`. The DELTA
+import workspace is at `/imports`, and tracked jobs open at `/imports/<jobId>`.
 Selecting a frame ID opens the detail view at `/frames/<frameId>` with all
 attributes, external references and links to related frames. Choose **Edit** to
 update a frame with a current version. Open **Version history** to see frame
