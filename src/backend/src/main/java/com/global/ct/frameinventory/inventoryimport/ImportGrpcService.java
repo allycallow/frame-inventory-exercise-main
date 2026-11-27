@@ -71,7 +71,7 @@ class ImportGrpcService extends InventoryImportGrpc.InventoryImportImplBase {
         reply(response, result.build());
     }
 
-    private static UUID jobId(String value) {
+    static UUID jobId(String value) {
         try {
             UUID id = UUID.fromString(value);
             if (id.toString().equalsIgnoreCase(value)) {

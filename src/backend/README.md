@@ -152,12 +152,13 @@ an AWAITING_UPLOAD job directly. An indeterminate lookup retries without
 changing job state. Expired or terminal jobs and notifications for another
 version cannot restart an import.
 
-### Run the DELTA worker
+### DELTA processing
 
-Enable `INVENTORY_IMPORT_WORKER_ENABLED=true` alongside the local import and
-dispatch settings. The worker reads the version pinned to the job. It restarts
-staging from that object if a retry loses unlogged data. A complete staging
-generation must match the durable job claim before it can be applied.
+The [Python worker](../workflows/README.md) calls Spring over loopback for
+staging and apply. The local import and dispatch settings enable these internal
+RPCs. Spring reads the version pinned to the job and restarts staging from that
+object if a retry loses unlogged data. A complete staging generation must
+match the durable job claim before it can be applied.
 
 DELTA expects the 45-column header from
 [`inventory_frame.csv`](../../data/inventory_frame.csv). The columns can be

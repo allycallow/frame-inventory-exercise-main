@@ -4,13 +4,19 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.function.IntConsumer;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import io.temporal.activity.Activity;
-import io.temporal.failure.ApplicationFailure;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class CsvImportActivities implements CsvImportWorkflow.Activities {
+@Service
+@Profile("local-import")
+@ConditionalOnProperty(name = "inventory.import.dispatch.enabled", havingValue = "true")
+class ImportProcessing {
     private static final long MAX_BYTES = 10L * 1024 * 1024;
     private static final int BATCH_SIZE = 200;
 
@@ -20,31 +26,31 @@ public class CsvImportActivities implements CsvImportWorkflow.Activities {
     private final S3Client s3;
     private final Timer applyDuration;
 
-    CsvImportActivities(ImportStaging staging, ImportDeltaApply delta, InventoryCsvReader reader, S3Client s3,
-                        Timer applyDuration) {
+    ImportProcessing(ImportStaging staging, ImportDeltaApply delta, InventoryCsvReader reader, S3Client s3,
+                     MeterRegistry registry) {
         this.staging = staging;
         this.delta = delta;
         this.reader = reader;
         this.s3 = s3;
-        this.applyDuration = applyDuration;
+        applyDuration = Timer.builder("inventory.import.apply")
+            .description("Time spent in each import apply activity attempt")
+            .publishPercentileHistogram()
+            .register(registry);
     }
 
-    @Override
-    public String stage(String jobId, int pass) {
-        var context = Activity.getExecutionContext();
-        UUID job = UUID.fromString(jobId);
+    String stage(UUID job, int sequence, IntConsumer progress) {
         UUID generation = UUID.randomUUID();
-        var claim = staging.claim(job, generation, pass * 10 + context.getInfo().getAttempt());
+        var claim = staging.claim(job, generation, sequence);
         if (claim.isEmpty()) {
             return "";
         }
         var object = claim.get();
-        context.heartbeat(0);
+        progress.accept(0);
         try (var stream = s3.getObject(request -> request.bucket(object.objectBucket())
                 .key(object.objectKey()).versionId(object.objectVersionId()))) {
             if (stream.response().contentLength() > MAX_BYTES) {
                 stream.abort();
-                throw ApplicationFailure.newNonRetryableFailure("Upload exceeds 10 MiB", "UPLOAD_TOO_LARGE");
+                throw new InventoryCsvReader.FileProblem("UPLOAD_TOO_LARGE");
             }
             var batch = new ArrayList<InventoryCsvReader.Row>(BATCH_SIZE);
             int count = reader.read(stream, row -> {
@@ -52,29 +58,25 @@ public class CsvImportActivities implements CsvImportWorkflow.Activities {
                 if (batch.size() == BATCH_SIZE) {
                     staging.append(job, generation, batch);
                     batch.clear();
-                    context.heartbeat(row.number());
+                    progress.accept(row.number());
                 }
             });
             if (!batch.isEmpty()) {
                 staging.append(job, generation, batch);
             }
             staging.complete(job, generation, count);
-            context.heartbeat(count);
+            progress.accept(count);
             return generation.toString();
-        } catch (InventoryCsvReader.FileProblem invalid) {
-            throw ApplicationFailure.newNonRetryableFailure("CSV validation failed", invalid.getMessage());
         } catch (IOException readFailure) {
             throw new UncheckedIOException(readFailure);
         }
     }
 
-    @Override
-    public boolean apply(String jobId, String generation) {
-        return applyDuration.record(() -> delta.apply(UUID.fromString(jobId), UUID.fromString(generation)));
+    boolean apply(UUID job, UUID generation) {
+        return applyDuration.record(() -> delta.apply(job, generation));
     }
 
-    @Override
-    public void fail(String jobId, String code) {
-        delta.fail(UUID.fromString(jobId), code);
+    void fail(UUID job, String code) {
+        delta.fail(job, code);
     }
 }

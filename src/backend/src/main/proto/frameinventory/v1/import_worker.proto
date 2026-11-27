@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package frameinventory.v1;
+
+option java_package = "com.global.ct.frameinventory.grpc.v1";
+option java_multiple_files = true;
+option java_outer_classname = "ImportWorkerProto";
+
+import "google/protobuf/empty.proto";
+
+service ImportWorker {
+  rpc Stage(StageImportRequest) returns (stream StageImportUpdate);
+  rpc Apply(ApplyImportRequest) returns (ApplyImportResponse);
+  rpc Fail(FailImportRequest) returns (google.protobuf.Empty);
+}
+
+message StageImportRequest {
+  string job_id = 1;
+  int32 pass_number = 2;
+  int32 attempt = 3;
+}
+
+message StageImportUpdate {
+  oneof update {
+    int32 rows_read = 1;
+    string generation = 2;
+  }
+}
+
+message ApplyImportRequest {
+  string job_id = 1;
+  string generation = 2;
+}
+
+message ApplyImportResponse {
+  bool finished = 1;
+}
+
+message FailImportRequest {
+  string job_id = 1;
+  string code = 2;
+}

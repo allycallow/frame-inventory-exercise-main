@@ -11,10 +11,10 @@ backend will use the bucket name and both queue URLs as import configuration.
 From the repository root:
 
 ```sh
-docker compose --profile import up -d --wait aws temporal
+docker compose up -d --wait aws temporal
 ```
 
-The profile pins the LocalStack community image from before token activation
+Compose pins the LocalStack community image from before token activation
 became mandatory. It exposes S3/SQS on `127.0.0.1:4566` and Temporal on
 `127.0.0.1:7233` with UI on port 8233. Containers on the Compose network can
 reach `aws:4566` and `temporal:7233`. Use the loopback S3 endpoint

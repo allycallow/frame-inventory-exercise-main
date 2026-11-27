@@ -1,0 +1,15 @@
+[project]
+name = "frame-inventory-workflows"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "grpcio==1.76.0",
+    "protobuf>=6.31.1,<7",
+    "temporalio==1.36.1",
+]
+
+[dependency-groups]
+dev = ["grpcio-tools==1.76.0"]
+
+[tool.uv]
+package = false

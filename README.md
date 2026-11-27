@@ -4,7 +4,7 @@ Application for the frame-inventory take-home exercise.
 
 ## System Overview
 
-Next.js serves the inventory and import workspace. It sends GraphQL requests through a same-origin route to the BFF, which calls Spring Boot over gRPC. Docker Compose runs these services alongside PostgreSQL, Prometheus, Grafana, Loki, Alloy, and the OpenTelemetry Collector. The exercise provides a legacy export in `data/inventory_frame.csv` and describes the inventory features in `INSTRUCTIONS.md`.
+Next.js serves the inventory and import workspace. It sends GraphQL requests through a same-origin route to the BFF, which calls Spring Boot over gRPC. Docker Compose runs these services alongside PostgreSQL, Temporal, a local S3/SQS emulator, Prometheus, Grafana, Loki, Alloy, and the OpenTelemetry Collector. The exercise provides a legacy export in `data/inventory_frame.csv` and describes the inventory features in `INSTRUCTIONS.md`.
 
 Bring the whole stack up with one command.
 
@@ -38,6 +38,9 @@ If you have `just` installed, run `just` to list the available recipes.
 | bff                   | 4000      | 4000           | Apollo Sandbox and the frame inventory GraphQL API     |
 | backend               | 8080      | 8080           | Spring Boot, exposes `GET /api/health`                 |
 | postgres              | 5432      | 5432           | Spring Boot applies the inventory schema via Flyway    |
+| aws                   | 4566      | 4566           | Local S3 and SQS for CSV imports                      |
+| temporal              | 7233, 8233 | 7233, 8233    | Temporal gRPC and web UI                              |
+| workflows             |           |              | Python Temporal worker for DELTA imports              |
 | prometheus            | 9091      | 9090           | Scrapes Spring Boot and Apollo metrics every 15 seconds |
 | otel-collector        | 9464      | 9464           | Scrapes Spring Boot metrics for local inspection       |
 | grafana               | 3001      | 3000           | Queries provisioned Prometheus and Loki data            |
@@ -107,8 +110,10 @@ and Grafana settings across restarts.
 
 ### DELTA import dashboard
 
-For the host-based [local import setup](src/backend/README.md#local-import-operator),
-start Spring Boot with the dispatcher and worker enabled. Set
+The main Compose stack scrapes import metrics from the backend. For the
+host-based [local import setup](src/backend/README.md#local-import-operator),
+start Spring Boot with the dispatcher enabled and run the
+[Python worker](src/workflows/README.md). Set
 `MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,prometheus` and keep HTTP
 port 8080 reachable from Docker. On Docker Desktop, scrape that host backend
 with the local import Compose override.
@@ -196,5 +201,10 @@ npm run dev
 
 ## Inventory import development services
 
-See [inventory import infrastructure](infra/inventory-import/README.md) for the
-opt-in S3/SQS emulator and Temporal profile, Terraform, and smoke test.
+Compose starts Temporal and the S3/SQS emulator. Set
+`INVENTORY_IMPORT_LOCAL_TOKEN` in the root `.env` to enable **Imports** and
+follow the [browser verification steps](src/frontend/README.md#verify-a-delta-import-in-the-browser).
+The [Temporal UI](http://127.0.0.1:8233) shows each import workflow.
+
+See [inventory import infrastructure](infra/inventory-import/README.md) for
+emulator configuration, Terraform, and the infrastructure smoke test.

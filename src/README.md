@@ -11,3 +11,4 @@ Apollo Server exposes frame management through GraphQL by calling Spring Boot ov
 - [Backend](./backend/README.md) starts Spring Boot and serves frame management over gRPC and health over HTTP.
 - [BFF](./bff/README.md) exposes the frame management API through GraphQL.
 - [Frontend](./frontend/README.md) serves the smoke-check page and rewrites API requests to the backend.
+- [Workflows](./workflows/README.md) runs the Python Temporal worker for DELTA imports.
