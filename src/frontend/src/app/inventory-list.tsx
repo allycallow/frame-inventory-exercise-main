@@ -105,7 +105,13 @@ function HistoryDialog({
   )
 }
 
-export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): ReactElement {
+export function InventoryList({
+  onEdit,
+  onJob,
+}: {
+  onEdit: (frameId: string) => void
+  onJob: (jobId: string) => void
+}): ReactElement {
   const [variables, setVariables] = useState<FramesQueryVariables>({ page: 0 })
 
   function submitSearch(event: FormEvent<HTMLFormElement>): void {
@@ -157,6 +163,7 @@ export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): Re
       <FrameResults
         variables={variables}
         onPage={(page) => setVariables((current) => ({ ...current, page }))}
+        onEdit={onEdit}
         onJob={onJob}
       />
     </section>
@@ -166,10 +173,12 @@ export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): Re
 function FrameResults({
   variables,
   onPage,
+  onEdit,
   onJob,
 }: {
   variables: FramesQueryVariables
   onPage: (page: number) => void
+  onEdit: (frameId: string) => void
   onJob: (jobId: string) => void
 }): ReactElement {
   const { page, search, statuses } = variables
@@ -223,6 +232,7 @@ function FrameResults({
                 <th scope="col">Format</th>
                 <th scope="col">Site</th>
                 <th scope="col">Status</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -247,6 +257,11 @@ function FrameResults({
                   <td>{frame.siteNo || '—'}</td>
                   <td>
                     <StatusChip value={frame.status} />
+                  </td>
+                  <td>
+                    <button className="text-button" onClick={() => onEdit(frameId)} aria-label={`Edit frame ${frameId}`}>
+                      Edit
+                    </button>
                   </td>
                 </tr>
               ))}

@@ -410,7 +410,7 @@ tbody tr:last-child th {
 }
 
 .history-dialog,
-.create-frame-dialog {
+.frame-dialog {
   position: fixed;
   inset: 0 0 0 auto;
   margin: 0;
@@ -424,13 +424,13 @@ tbody tr:last-child th {
   box-shadow: -12px 0 32px #0f18201a;
 }
 .history-dialog::backdrop,
-.create-frame-dialog::backdrop {
+.frame-dialog::backdrop {
   background: #0f182054;
 }
-.create-frame-form {
+.frame-form {
   padding: 20px;
 }
-.create-frame-form fieldset {
+.frame-form fieldset {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   min-width: 0;
   margin: 0;
@@ -438,14 +438,14 @@ tbody tr:last-child th {
   border: 1px solid var(--border);
   border-radius: 4px;
 }
-.create-frame-form fieldset p {
+.frame-form fieldset p {
   grid-column: 1 / -1;
 }
-.create-frame-form legend {
+.frame-form legend {
   padding: 0 4px;
   font-weight: 600;
 }
-.frame-created {
+.frame-saved {
   margin-bottom: 16px;
   color: var(--green);
   overflow-wrap: anywhere;
@@ -511,7 +511,7 @@ tbody tr:last-child th {
 }
 
 @media (max-width: 380px) {
-  .create-frame-form fieldset {
+  .frame-form fieldset {
     grid-template-columns: 1fr;
   }
   .counts {
