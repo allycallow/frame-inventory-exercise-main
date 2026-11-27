@@ -3,7 +3,7 @@
   "checkpoint_id": "01M8E850EQCFYPG7EKHZ60TDSV",
   "strategy": "manual-commit",
   "branch": "alex/glo-48-backend-list-filtering-and-search",
-  "checkpoints_count": 21,
+  "checkpoints_count": 24,
   "files_touched": [
     "src/backend/README.md",
     "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameGrpcService.java",
@@ -33,14 +33,21 @@
       "compact_transcript": "/2/transcript.jsonl",
       "content_hash": "/2/content_hash.txt",
       "prompt": "/2/prompt.txt"
+    },
+    {
+      "metadata": "/3/metadata.json",
+      "transcript": "/3/full.jsonl",
+      "compact_transcript": "/3/transcript.jsonl",
+      "content_hash": "/3/content_hash.txt",
+      "prompt": "/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 33,
-    "cache_creation_tokens": 5053,
-    "cache_read_tokens": 2842352,
-    "output_tokens": 4640,
-    "api_call_count": 11
+    "input_tokens": 123,
+    "cache_creation_tokens": 37540,
+    "cache_read_tokens": 6845387,
+    "output_tokens": 13341,
+    "api_call_count": 41
   },
   "redaction": {
     "replacements": 175,
