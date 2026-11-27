@@ -3,7 +3,7 @@
   "checkpoint_id": "01M8EHS31D04M53HHEG37EEN8S",
   "strategy": "manual-commit",
   "branch": "alex/glo-65-give-frames-and-imports-their-own-routes-frames",
-  "checkpoints_count": 23,
+  "checkpoints_count": 25,
   "files_touched": [
     "README.md",
     "src/frontend/src/app/frame-history.tsx",
@@ -40,24 +40,31 @@
       "compact_transcript": "/3/transcript.jsonl",
       "content_hash": "/3/content_hash.txt",
       "prompt": "/3/prompt.txt"
+    },
+    {
+      "metadata": "/4/metadata.json",
+      "transcript": "/4/full.jsonl",
+      "compact_transcript": "/4/transcript.jsonl",
+      "content_hash": "/4/content_hash.txt",
+      "prompt": "/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 135,
-    "cache_creation_tokens": 21149,
-    "cache_read_tokens": 4202392,
-    "output_tokens": 6454,
-    "api_call_count": 45
+    "input_tokens": 174,
+    "cache_creation_tokens": 23961,
+    "cache_read_tokens": 5220171,
+    "output_tokens": 7636,
+    "api_call_count": 58
   },
   "redaction": {
-    "replacements": 154,
+    "replacements": 238,
     "layers": {
       "betterleaks": 9,
       "connection_string": 0,
       "credential_key": 0,
       "credential_value": 122,
       "credentialed_uri": 0,
-      "entropy": 32,
+      "entropy": 116,
       "key_context": 0,
       "provider_token": 0,
       "shell_stdin": 0
