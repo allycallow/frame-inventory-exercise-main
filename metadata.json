@@ -3,10 +3,13 @@
   "checkpoint_id": "01M8EF546E1KD6E2SD8D7EGJCR",
   "strategy": "manual-commit",
   "branch": "alex/glo-63-add-an-edit-button-to-the-frame-detail-page",
-  "checkpoints_count": 21,
+  "checkpoints_count": 22,
   "files_touched": [
+    "src/frontend/package-lock.json",
+    "src/frontend/package.json",
     "src/frontend/src/app/README.md",
     "src/frontend/src/app/frame-detail.graphql",
+    "src/frontend/src/app/frame-detail.test.tsx",
     "src/frontend/src/app/frame-detail.tsx",
     "src/frontend/src/generated/graphql.ts"
   ],
@@ -38,24 +41,31 @@
       "compact_transcript": "/3/transcript.jsonl",
       "content_hash": "/3/content_hash.txt",
       "prompt": "/3/prompt.txt"
+    },
+    {
+      "metadata": "/4/metadata.json",
+      "transcript": "/4/full.jsonl",
+      "compact_transcript": "/4/transcript.jsonl",
+      "content_hash": "/4/content_hash.txt",
+      "prompt": "/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 301,
-    "cache_creation_tokens": 92191,
-    "cache_read_tokens": 12312506,
-    "output_tokens": 17020,
-    "api_call_count": 63
+    "input_tokens": 541,
+    "cache_creation_tokens": 166178,
+    "cache_read_tokens": 14123760,
+    "output_tokens": 24752,
+    "api_call_count": 94
   },
   "redaction": {
-    "replacements": 147,
+    "replacements": 231,
     "layers": {
       "betterleaks": 9,
       "connection_string": 0,
       "credential_key": 0,
       "credential_value": 118,
       "credentialed_uri": 0,
-      "entropy": 29,
+      "entropy": 113,
       "key_context": 0,
       "provider_token": 0,
       "shell_stdin": 0

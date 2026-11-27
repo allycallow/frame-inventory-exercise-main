@@ -1,0 +1,54 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M8EF546E1KD6E2SD8D7EGJCR",
+  "session_id": "01a21cef-482b-7140-9dc5-9e77991bc0e3",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-27T12:19:51.537191Z",
+  "branch": "alex/glo-63-add-an-edit-button-to-the-frame-detail-page",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "src/frontend/package-lock.json",
+    "src/frontend/package.json",
+    "src/frontend/src/app/README.md",
+    "src/frontend/src/app/frame-detail.graphql",
+    "src/frontend/src/app/frame-detail.test.tsx",
+    "src/frontend/src/app/frame-detail.tsx",
+    "src/frontend/src/generated/graphql.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "5890799e9571",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 240,
+    "cache_creation_tokens": 73987,
+    "cache_read_tokens": 1811254,
+    "output_tokens": 7732,
+    "api_call_count": 31
+  },
+  "session_token_usage": {
+    "input_tokens": 240,
+    "cache_creation_tokens": 73987,
+    "cache_read_tokens": 1811254,
+    "output_tokens": 7732,
+    "api_call_count": 31
+  },
+  "redaction": {
+    "replacements": 84,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 84,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 1
+  }
+}
