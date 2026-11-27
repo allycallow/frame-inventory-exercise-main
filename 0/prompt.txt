@@ -1,0 +1,17 @@
+#14 merged
+
+---
+
+Can you double check BFF and Sprint boot have sufficient logging to debug issues when in production
+
+---
+
+can you fill in the gaps
+
+---
+
+nice can we open PR
+
+---
+
+merged #16
