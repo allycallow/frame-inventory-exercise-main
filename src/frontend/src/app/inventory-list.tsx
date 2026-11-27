@@ -1,9 +1,11 @@
 'use client'
 
 import { useQuery } from '@apollo/client/react'
-import { useEffect, useRef, useState, type ReactElement } from 'react'
-import { FrameHistoryDocument, FramesDocument } from '../generated/graphql'
+import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react'
+import { FrameHistoryDocument, FramesDocument, type FramesQueryVariables } from '../generated/graphql'
 import { dateTime, errorMessage, label } from './inventory-api'
+
+const FRAME_STATUSES = ['LIVE', 'PENDING', 'MAINTENANCE', 'BLOCKED', 'DRAFT']
 
 export function StatusChip({ value }: { value: string }): ReactElement {
   return (
@@ -104,23 +106,89 @@ function HistoryDialog({
 }
 
 export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): ReactElement {
-  const [page, setPage] = useState(0)
+  const [variables, setVariables] = useState<FramesQueryVariables>({ page: 0 })
+
+  function submitSearch(event: FormEvent<HTMLFormElement>): void {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    const search = String(form.get('search') ?? '').trim()
+    setVariables((current) => ({ ...current, page: 0, search: search || undefined }))
+  }
+
+  return (
+    <section className="card" aria-label="Inventory frames">
+      <form
+        className="frame-filters"
+        role="search"
+        aria-label="Filter frames"
+        onSubmit={submitSearch}
+        onReset={() => setVariables({ page: 0 })}
+      >
+        <label className="field frame-search">
+          Frame ID or town
+          <input type="search" name="search" />
+        </label>
+        <label className="field">
+          Status
+          <select
+            name="status"
+            onChange={(event) => {
+              const status = event.currentTarget.value
+              setVariables((current) => ({
+                ...current,
+                page: 0,
+                statuses: status ? [status] : undefined,
+              }))
+            }}
+          >
+            <option value="">All statuses</option>
+            {FRAME_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {label(status)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="actions">
+          <button className="button button-primary" type="submit">Search</button>
+          <button className="button button-secondary" type="reset">Clear filters</button>
+        </div>
+      </form>
+      <FrameResults
+        variables={variables}
+        onPage={(page) => setVariables((current) => ({ ...current, page }))}
+        onJob={onJob}
+      />
+    </section>
+  )
+}
+
+function FrameResults({
+  variables,
+  onPage,
+  onJob,
+}: {
+  variables: FramesQueryVariables
+  onPage: (page: number) => void
+  onJob: (jobId: string) => void
+}): ReactElement {
+  const { page, search, statuses } = variables
   const [selected, setSelected] = useState<string | null>(null)
   const { data, loading, error, refetch } = useQuery(FramesDocument, {
-    variables: { page },
+    variables,
     fetchPolicy: 'network-only',
     ssr: false,
   })
 
   if (loading)
     return (
-      <p className="card panel-message" role="status">
+      <p className="panel-message" role="status">
         Loading frames…
       </p>
     )
   if (error || !data) {
     return (
-      <div className="card panel-message" role="alert">
+      <div className="panel-message" role="alert">
         <p className="error">
           {error ? errorMessage(error) : 'Inventory service returned no result.'}
         </p>
@@ -137,8 +205,13 @@ export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): Re
   }
 
   const { items, hasNext, size } = data.frames
+  const emptyMessage = page > 0
+    ? 'No frames on this page.'
+    : search || statuses?.length
+      ? 'No frames match your filters.'
+      : 'No frames in inventory yet.'
   return (
-    <section className="card" aria-label="Inventory frames">
+    <>
       {items.length ? (
         <div className="table-scroll">
           <table>
@@ -181,9 +254,7 @@ export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): Re
           </table>
         </div>
       ) : (
-        <p className="panel-message">
-          {page === 0 ? 'No frames in inventory yet.' : 'No frames on this page.'}
-        </p>
+        <p className="panel-message" role="status">{emptyMessage}</p>
       )}
       {(items.length > 0 || page > 0) && (
         <footer className="pagination">
@@ -196,14 +267,14 @@ export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): Re
             <button
               className="button button-secondary"
               disabled={page === 0}
-              onClick={() => setPage(page - 1)}
+              onClick={() => onPage(page - 1)}
             >
               Previous
             </button>
             <button
               className="button button-secondary"
               disabled={!hasNext}
-              onClick={() => setPage(page + 1)}
+              onClick={() => onPage(page + 1)}
             >
               Next
             </button>
@@ -220,6 +291,6 @@ export function InventoryList({ onJob }: { onJob: (jobId: string) => void }): Re
           }}
         />
       )}
-    </section>
+    </>
   )
 }

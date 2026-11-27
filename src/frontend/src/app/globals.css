@@ -196,6 +196,17 @@ main {
 .table-scroll {
   overflow-x: auto;
 }
+.frame-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.frame-search {
+  flex: 1 1 220px;
+}
 table {
   width: 100%;
   border-collapse: collapse;
