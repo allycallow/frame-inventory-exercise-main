@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,6 +78,48 @@ class ImportDeltaApplyTests {
         assertThat(second.rowsApplied()).isZero();
         assertThat(count("frame_version")).isEqualTo(1_000);
         assertThat(count("stg_inventory_import")).isZero();
+    }
+
+    @Test
+    void measuresRecentDeltaJobAndRowOutcomes() throws IOException {
+        var registry = new SimpleMeterRegistry();
+        new ImportMetrics(registry, jobs);
+        var completed = registry.get("inventory.import.jobs.finished.last.hour").tag("status", "COMPLETED").gauge();
+        var applied = registry.get("inventory.import.rows.last.hour").tag("outcome", "applied").gauge();
+        assertThat(completed.value()).isZero();
+        assertThat(applied.value()).isZero();
+
+        var rows = fixture();
+        apply(rows.subList(0, 1), false);
+        var invalid = new InventoryCsvReader.Row(3, null, null, "INVALID_FIELD", "invalid");
+        apply(List.of(rows.get(0), rows.get(1), invalid), false);
+        newJob(false);
+
+        jdbc.sql("""
+            INSERT INTO import_jobs (job_id, owner_id, import_mode, force_overwrite, status,
+                object_bucket, object_key, object_version_id, upload_expires_at, dispatch_until,
+                finished_at, rows_read, rows_applied, rows_rejected)
+            SELECT id, 'test-operator', mode, false, status, 'test-bucket',
+                'uploads/' || id || '/inventory_frame.csv', 'version', now(), now(),
+                now() - age, applied + rejected, applied, rejected
+            FROM (VALUES
+                (gen_random_uuid(), 'DELTA', 'COMPLETED', interval '2 hours', 8, 0),
+                (gen_random_uuid(), 'FULL_SNAPSHOT', 'COMPLETED', interval '1 minute', 4, 0),
+                (gen_random_uuid(), 'DELTA', 'FAILED', interval '1 minute', 0, 5),
+                (gen_random_uuid(), 'DELTA', 'EXPIRED', interval '1 minute', 0, 0)
+            ) AS fixtures(id, mode, status, age, applied, rejected)
+            """).update();
+
+        assertThat(completed.value()).isEqualTo(1);
+        for (String status : List.of("COMPLETED_WITH_ERRORS", "FAILED", "EXPIRED")) {
+            assertThat(registry.get("inventory.import.jobs.finished.last.hour").tag("status", status).gauge().value())
+                .isEqualTo(1);
+        }
+        assertThat(applied.value()).isEqualTo(2);
+        assertThat(registry.get("inventory.import.rows.last.hour").tag("outcome", "unchanged").gauge().value())
+            .isEqualTo(1);
+        assertThat(registry.get("inventory.import.rows.last.hour").tag("outcome", "rejected").gauge().value())
+            .isEqualTo(1);
     }
 
     @Test

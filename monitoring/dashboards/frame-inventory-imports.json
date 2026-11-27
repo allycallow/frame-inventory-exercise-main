@@ -1,18 +1,66 @@
 {
   "uid": "frame-inventory-imports",
   "title": "Frame Inventory Imports",
-  "description": "DELTA import backlog, dispatch failures, and apply duration.",
+  "description": "DELTA import outcomes, row rejection rate, backlog, dispatch failures and apply duration.",
   "tags": ["frame-inventory", "imports"],
   "schemaVersion": 39,
   "time": { "from": "now-1h", "to": "now" },
   "refresh": "30s",
   "panels": [
     {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Import outcomes in the last hour",
+      "description": "Jobs that completed, completed with errors, failed or expired in the preceding hour.",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max by (status) (inventory_import_jobs_finished_last_hour{job=\"frame-inventory-backend\"})",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Row outcomes in the last hour",
+      "description": "Applied, unchanged and rejected rows from jobs that completed in the preceding hour, including jobs with row errors.",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max by (outcome) (inventory_import_rows_last_hour{job=\"frame-inventory-backend\"})",
+          "legendFormat": "{{outcome}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Row rejection rate in the last hour",
+      "description": "Rejected rows as a percentage of applied, unchanged and rejected rows. The chart has a gap when there are no row outcomes.",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1, "decimals": 1 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(inventory_import_rows_last_hour{job=\"frame-inventory-backend\",outcome=\"rejected\"}) / (sum(max by (outcome) (inventory_import_rows_last_hour{job=\"frame-inventory-backend\"})) > 0)",
+          "legendFormat": "Rejected rows"
+        }
+      ]
+    },
+    {
       "id": 1,
       "type": "timeseries",
       "title": "Oldest active import by status",
       "description": "Age since dispatch confirmation, or since job creation when dispatch is unconfirmed. Zero means there are no jobs in that status.",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": { "unit": "s", "min": 0 }, "overrides": [] },
       "targets": [
@@ -28,7 +76,7 @@
       "type": "timeseries",
       "title": "Terminal dispatch failures in the last hour",
       "description": "Jobs that reached FAILED with DISPATCH_FAILED in the preceding hour.",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0 }, "overrides": [] },
       "targets": [
@@ -44,7 +92,7 @@
       "type": "timeseries",
       "title": "Apply duration",
       "description": "Time spent in each apply activity attempt, including retries. Windows without attempts have no duration sample.",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": { "unit": "s", "min": 0 }, "overrides": [] },
       "targets": [

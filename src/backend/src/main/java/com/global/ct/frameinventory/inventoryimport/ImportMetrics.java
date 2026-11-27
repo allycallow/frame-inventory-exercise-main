@@ -19,5 +19,18 @@ class ImportMetrics {
         Gauge.builder("inventory.import.dispatch.failures.last.hour", jobs, ImportJobRepository::recentDispatchFailures)
             .description("Jobs that failed dispatch in the last hour")
             .register(registry);
+
+        for (String status : new String[]{"COMPLETED", "COMPLETED_WITH_ERRORS", "FAILED", "EXPIRED"}) {
+            Gauge.builder("inventory.import.jobs.finished.last.hour", jobs, repository -> repository.recentFinishedJobs(status))
+                .description("DELTA import jobs that reached a terminal status in the last hour")
+                .tag("status", status)
+                .register(registry);
+        }
+        for (String outcome : new String[]{"applied", "unchanged", "rejected"}) {
+            Gauge.builder("inventory.import.rows.last.hour", jobs, repository -> repository.recentRowOutcome(outcome))
+                .description("Rows by outcome from DELTA imports that completed in the last hour")
+                .tag("outcome", outcome)
+                .register(registry);
+        }
     }
 }
