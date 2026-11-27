@@ -61,7 +61,11 @@ async function main() {
           importAuthorization: imports ? req.headers.authorization : undefined,
         }
       },
-      listen: { port: 4000, ...(imports ? { host: '127.0.0.1' } : {}) },
+      listen: {
+        port: 4000,
+        host:
+          process.env.BFF_LISTEN_HOST ?? (imports ? '127.0.0.1' : undefined),
+      },
     })
     logger.info({ url }, 'Frame Inventory GraphQL API available')
   } catch (error) {

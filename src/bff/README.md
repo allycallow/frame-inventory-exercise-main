@@ -134,8 +134,9 @@ excluded. The SDK strips request data and breadcrumbs from reported events.
 
 ## Local inventory import
 
-The BFF build packages both the frame and inventory import protobufs. For local
-imports, run Spring Boot and the BFF on the same host. Enable Spring's
+The BFF build packages both the frame and inventory import protobufs. For
+Compose, follow the [browser setup](../frontend/README.md#verify-a-delta-import-in-the-browser).
+When running services directly on the host, enable Spring's
 `local-import` profile and configure its S3 upload settings as described in the
 [backend README](../backend/README.md). Set
 `IMPORT_GRPC_ENDPOINT=127.0.0.1:9090` on the BFF. This makes the BFF listen on

@@ -18,49 +18,73 @@ services:
       context: ./src/backend
     container_name: frame-inventory-backend
     ports:
-      - "8080:8080"
-      - "9090:9090"
+      - "127.0.0.1:4000:4000"
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:9090:9090"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: docker${INVENTORY_IMPORT_LOCAL_TOKEN:+,local-import}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/frames
       SPRING_FLYWAY_ENABLED: "true"
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-local}
+      INVENTORY_IMPORT_LOCAL_TOKEN: ${INVENTORY_IMPORT_LOCAL_TOKEN:-}
+      INVENTORY_IMPORT_BUCKET: frame-inventory-import-local
+      INVENTORY_IMPORT_REGION: us-east-1
+      INVENTORY_IMPORT_SIGNING_ENDPOINT: http://127.0.0.1:4566
+      INVENTORY_IMPORT_DISPATCH_ENABLED: "true"
+      INVENTORY_IMPORT_DISPATCH_AWS_ENDPOINT: http://aws:4566
+      INVENTORY_IMPORT_DISPATCH_QUEUE_URL: http://aws:4566/000000000000/inventory-import
+      INVENTORY_IMPORT_DISPATCH_DLQ_URL: http://aws:4566/000000000000/inventory-import-dlq
+      INVENTORY_IMPORT_DISPATCH_TEMPORAL_TARGET: temporal:7233
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
     depends_on:
       postgres:
         condition: service_healthy
+      aws:
+        condition: service_healthy
+      temporal:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/actuator/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
     networks:
-      - frame-inventory
+      frame-inventory:
+        aliases: [bff]
 
   bff:
     build:
       context: ./src
       dockerfile: bff/Dockerfile
-    ports:
-      - "127.0.0.1:4000:4000"
+    # Keep the import gRPC connection on loopback.
+    network_mode: service:backend
     environment:
-      FRAME_GRPC_ENDPOINT: ${FRAME_GRPC_ENDPOINT:-backend:9090}
+      FRAME_GRPC_ENDPOINT: ${FRAME_GRPC_ENDPOINT:-127.0.0.1:9090}
+      IMPORT_GRPC_ENDPOINT: ${INVENTORY_IMPORT_LOCAL_TOKEN:+127.0.0.1:9090}
+      BFF_LISTEN_HOST: 0.0.0.0
       OTEL_EXPORTER_PROMETHEUS_HOST: 0.0.0.0
       SENTRY_DSN: ${BFF_SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-local}
     depends_on:
-      - backend
-    networks:
-      - frame-inventory
+      backend:
+        condition: service_healthy
 
   frontend:
     build:
       context: ./src/frontend
     container_name: frame-inventory-frontend
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       BACKEND_URL: http://backend:8080
       BFF_URL: http://bff:4000
     volumes:
       - ./src/frontend/src:/app/src
       - ./src/frontend/public:/app/public
+      - ./src/frontend/next.config.ts:/app/next.config.ts:ro
     depends_on:
       - backend
       - bff
@@ -69,7 +93,6 @@ services:
 
   aws:
     image: localstack/localstack:4.12.0
-    profiles: [import]
     ports:
       - "127.0.0.1:4566:4566"
     environment:
@@ -89,13 +112,30 @@ services:
 
   temporal:
     image: temporalio/temporal:1.5.1
-    profiles: [import]
     command: ["server", "start-dev", "--ip", "0.0.0.0"]
     ports:
       - "127.0.0.1:7233:7233"
       - "127.0.0.1:8233:8233"
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "127.0.0.1:7233"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
     networks:
       - frame-inventory
+
+  workflows:
+    build:
+      context: ./src
+      dockerfile: workflows/Dockerfile
+    network_mode: service:backend
+    environment:
+      INVENTORY_IMPORT_LOCAL_TOKEN: ${INVENTORY_IMPORT_LOCAL_TOKEN:-}
+      INVENTORY_IMPORT_DISPATCH_TEMPORAL_TARGET: temporal:7233
+    depends_on:
+      backend:
+        condition: service_healthy
+    stop_grace_period: 25s
 
   postgres:
     image: postgres:18.6
