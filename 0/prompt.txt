@@ -1,0 +1,13 @@
+can we chat about this ticket  https://linear.app/upfrontbeats/issue/GLO-9/add-grafana-tempo
+
+---
+
+want this  slow inventory request spent its time in the BFF or Spring Boot
+
+---
+
+nice can you update ticket description so I can review
+
+---
+
+nice can you implement the work
