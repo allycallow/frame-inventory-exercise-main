@@ -7,6 +7,8 @@ export async function POST(request: Request): Promise<Response> {
     )
   }
   const headers = new Headers({ 'content-type': 'application/json' })
+  const accept = request.headers.get('accept')
+  if (accept) headers.set('accept', accept)
   const authorization = request.headers.get('authorization')
   if (authorization) headers.set('authorization', authorization)
 
@@ -29,7 +31,13 @@ export async function POST(request: Request): Promise<Response> {
   } catch {
     return Response.json(
       { errors: [{ message: 'Inventory service is unavailable. Try again shortly.' }] },
-      { status: 503, headers: { 'cache-control': 'no-store' } },
+      {
+        status: 503,
+        headers: {
+          'content-type': 'application/graphql-response+json',
+          'cache-control': 'no-store',
+        },
+      },
     )
   }
 }

@@ -1,0 +1,12 @@
+schema: ../bff/schema/*.gql
+documents: src/**/*.graphql
+generates:
+  src/generated/graphql.ts:
+    plugins:
+      - typescript-operations
+      - typed-document-node
+    config:
+      documentNodeImport: '@apollo/client#TypedDocumentNode'
+      useTypeImports: true
+      nonOptionalTypename: true
+      skipTypeNameForRoot: true
