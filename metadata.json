@@ -3,7 +3,7 @@
   "checkpoint_id": "01M8E8EHVNB2EXYJRM7SFVGSY9",
   "strategy": "manual-commit",
   "branch": "alex/glo-48-backend-list-filtering-and-search",
-  "checkpoints_count": 14,
+  "checkpoints_count": 17,
   "files_touched": [
     "src/bff/AGENTS.md",
     "src/bff/README.md",
@@ -32,14 +32,21 @@
       "compact_transcript": "/2/transcript.jsonl",
       "content_hash": "/2/content_hash.txt",
       "prompt": "/2/prompt.txt"
+    },
+    {
+      "metadata": "/3/metadata.json",
+      "transcript": "/3/full.jsonl",
+      "compact_transcript": "/3/transcript.jsonl",
+      "content_hash": "/3/content_hash.txt",
+      "prompt": "/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 12,
-    "cache_creation_tokens": 1331,
-    "cache_read_tokens": 1045235,
-    "output_tokens": 1273,
-    "api_call_count": 4
+    "input_tokens": 132,
+    "cache_creation_tokens": 22188,
+    "cache_read_tokens": 7700699,
+    "output_tokens": 12660,
+    "api_call_count": 44
   },
   "redaction": {
     "replacements": 175,
