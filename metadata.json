@@ -3,7 +3,7 @@
   "checkpoint_id": "01M8E850EQCFYPG7EKHZ60TDSV",
   "strategy": "manual-commit",
   "branch": "alex/glo-48-backend-list-filtering-and-search",
-  "checkpoints_count": 24,
+  "checkpoints_count": 25,
   "files_touched": [
     "src/backend/README.md",
     "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameGrpcService.java",
@@ -40,24 +40,31 @@
       "compact_transcript": "/3/transcript.jsonl",
       "content_hash": "/3/content_hash.txt",
       "prompt": "/3/prompt.txt"
+    },
+    {
+      "metadata": "/4/metadata.json",
+      "transcript": "/4/full.jsonl",
+      "compact_transcript": "/4/transcript.jsonl",
+      "content_hash": "/4/content_hash.txt",
+      "prompt": "/4/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 123,
-    "cache_creation_tokens": 37540,
-    "cache_read_tokens": 6845387,
-    "output_tokens": 13341,
-    "api_call_count": 41
+    "input_tokens": 325,
+    "cache_creation_tokens": 112428,
+    "cache_read_tokens": 8562914,
+    "output_tokens": 20891,
+    "api_call_count": 71
   },
   "redaction": {
-    "replacements": 175,
+    "replacements": 177,
     "layers": {
       "betterleaks": 6,
       "connection_string": 0,
       "credential_key": 0,
       "credential_value": 122,
       "credentialed_uri": 0,
-      "entropy": 47,
+      "entropy": 49,
       "key_context": 0,
       "provider_token": 0,
       "shell_stdin": 0
