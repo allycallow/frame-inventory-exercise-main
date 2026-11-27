@@ -5,10 +5,9 @@ import Link from 'next/link'
 import { useState, type ChangeEvent, type ReactElement } from 'react'
 import { useForm } from 'react-hook-form'
 import { FramesDocument, type FramesQueryVariables } from '../generated/graphql'
+import { FRAME_STATUSES } from './frame-form-input'
 import { frameDetailHref } from './frame-route'
 import { errorMessage, label } from './inventory-api'
-
-const FRAME_STATUSES = ['LIVE', 'PENDING', 'MAINTENANCE', 'BLOCKED', 'DRAFT']
 
 export function StatusChip({ value }: { value: string }): ReactElement {
   return (
