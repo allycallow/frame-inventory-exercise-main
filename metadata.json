@@ -3,8 +3,13 @@
   "checkpoint_id": "01M8E850EQCFYPG7EKHZ60TDSV",
   "strategy": "manual-commit",
   "branch": "alex/glo-48-backend-list-filtering-and-search",
-  "checkpoints_count": 10,
+  "checkpoints_count": 21,
   "files_touched": [
+    "src/backend/README.md",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameGrpcService.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameRepository.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/frame/FrameService.java",
+    "src/backend/src/main/proto/frameinventory/v1/frames.proto",
     "src/backend/src/test/java/com/global/ct/frameinventory/frame/FrameGrpcTests.java"
   ],
   "sessions": [
@@ -21,17 +26,31 @@
       "compact_transcript": "/1/transcript.jsonl",
       "content_hash": "/1/content_hash.txt",
       "prompt": "/1/prompt.txt"
+    },
+    {
+      "metadata": "/2/metadata.json",
+      "transcript": "/2/full.jsonl",
+      "compact_transcript": "/2/transcript.jsonl",
+      "content_hash": "/2/content_hash.txt",
+      "prompt": "/2/prompt.txt"
     }
   ],
+  "token_usage": {
+    "input_tokens": 33,
+    "cache_creation_tokens": 5053,
+    "cache_read_tokens": 2842352,
+    "output_tokens": 4640,
+    "api_call_count": 11
+  },
   "redaction": {
-    "replacements": 123,
+    "replacements": 175,
     "layers": {
-      "betterleaks": 2,
+      "betterleaks": 6,
       "connection_string": 0,
       "credential_key": 0,
-      "credential_value": 84,
+      "credential_value": 122,
       "credentialed_uri": 0,
-      "entropy": 37,
+      "entropy": 47,
       "key_context": 0,
       "provider_token": 0,
       "shell_stdin": 0
