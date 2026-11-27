@@ -3,9 +3,14 @@
   "checkpoint_id": "01M8ETH3DK0QVJ166WDQ6GY8M9",
   "strategy": "manual-commit",
   "branch": "alex/import-business-metrics",
-  "checkpoints_count": 4,
+  "checkpoints_count": 5,
   "files_touched": [
-    "README.md"
+    "README.md",
+    "monitoring/dashboards/frame-inventory-imports.json",
+    "src/backend/src/main/java/com/global/ct/frameinventory/inventoryimport/ImportJobRepository.java",
+    "src/backend/src/main/java/com/global/ct/frameinventory/inventoryimport/ImportMetrics.java",
+    "src/backend/src/main/resources/db/migration/V7__index_inventory_import_outcomes.sql",
+    "src/backend/src/test/java/com/global/ct/frameinventory/inventoryimport/ImportDeltaApplyTests.java"
   ],
   "sessions": [
     {
@@ -14,22 +19,29 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 406,
-    "cache_creation_tokens": 137492,
-    "cache_read_tokens": 9261124,
-    "output_tokens": 16793,
-    "api_call_count": 98
+    "input_tokens": 644,
+    "cache_creation_tokens": 204062,
+    "cache_read_tokens": 11438540,
+    "output_tokens": 25575,
+    "api_call_count": 140
   },
   "redaction": {
-    "replacements": 319,
+    "replacements": 320,
     "layers": {
       "betterleaks": 4,
       "connection_string": 0,
       "credential_key": 0,
-      "credential_value": 0,
+      "credential_value": 1,
       "credentialed_uri": 0,
       "entropy": 468,
       "key_context": 0,
