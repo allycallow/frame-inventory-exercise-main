@@ -1,0 +1,9 @@
+can you update linear ticket progress
+
+---
+
+can you update linear board
+
+---
+
+can you give more shell commands to test with create edit list
