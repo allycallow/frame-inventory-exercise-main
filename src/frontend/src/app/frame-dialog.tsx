@@ -2,7 +2,8 @@
 
 import { CombinedGraphQLErrors } from '@apollo/client/errors'
 import { skipToken, useMutation, useQuery } from '@apollo/client/react'
-import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react'
+import { useForm } from 'react-hook-form'
 import {
   CreateFrameDocument,
   FrameForEditDocument,
@@ -13,8 +14,10 @@ import {
   FRAME_STATUSES,
   FRAME_TECHNOLOGIES,
   MAX_SLOTS,
+  frameFormValues,
   readCreateFrameInput,
   readUpdateFrameInput,
+  type FrameFormValues,
 } from './frame-form-input'
 import { errorMessage, label } from './inventory-api'
 
@@ -28,8 +31,6 @@ export function FrameDialog({
   onSaved: (frameId: string) => void
 }): ReactElement {
   const dialog = useRef<HTMLDialogElement>(null)
-  const frameIdInput = useRef<HTMLInputElement>(null)
-  const [error, setError] = useState('')
   const [conflict, setConflict] = useState(false)
   const details = useQuery(
     FrameForEditDocument,
@@ -41,18 +42,26 @@ export function FrameDialog({
           ssr: false,
         },
   )
-  const [createFrame, { loading: creating }] = useMutation(CreateFrameDocument, {
+  const [createFrame] = useMutation(CreateFrameDocument, {
     refetchQueries: [FramesDocument],
   })
-  const [updateFrame, { loading: updating }] = useMutation(UpdateFrameDocument, {
+  const [updateFrame] = useMutation(UpdateFrameDocument, {
     refetchQueries: [FramesDocument],
   })
 
   const editing = frameId !== undefined
   const current = (details.data ?? details.previousData)?.frame
   const frame = current?.current ? current : undefined
-  const attributes = frame?.attributes
-  const saving = creating || updating
+  const values = useMemo(() => frameFormValues(frame), [frame])
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    setFocus,
+    formState: { errors, isSubmitting: saving },
+  } = useForm({ values })
+  const submitError = errors.root?.submit?.message
   const fieldsDisabled = saving || details.loading
   const loadError = details.error
     ? errorMessage(details.error)
@@ -63,9 +72,9 @@ export function FrameDialog({
   useEffect(() => {
     const modal = dialog.current
     modal?.showModal()
-    frameIdInput.current?.focus()
+    if (!editing) setFocus('frameId')
     return () => modal?.close()
-  }, [])
+  }, [editing, setFocus])
 
   function cancel(): void {
     if (saving) return
@@ -78,23 +87,20 @@ export function FrameDialog({
       const { data } = await details.refetch()
       if (data?.frame?.current) {
         setConflict(false)
-        setError('')
+        reset(frameFormValues(data.frame))
       }
     } catch {
       // The query error is shown in the dialog.
     }
   }
 
-  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault()
+  async function submit(form: FrameFormValues): Promise<void> {
     if (fieldsDisabled || conflict || loadError || (editing && !frame)) return
-    setError('')
-    const form = new FormData(event.currentTarget)
     const input = frame
       ? { mode: 'edit' as const, result: readUpdateFrameInput(form, frame) }
       : { mode: 'create' as const, result: readCreateFrameInput(form) }
     if ('error' in input.result) {
-      setError(input.result.error)
+      setError('root.submit', { message: input.result.error })
       return
     }
     try {
@@ -113,7 +119,7 @@ export function FrameDialog({
       ) {
         setConflict(true)
       } else {
-        setError(errorMessage(error))
+        setError('root.submit', { message: errorMessage(error) })
       }
     }
   }
@@ -161,9 +167,8 @@ export function FrameDialog({
       )}
       {(!editing || frame) && (
         <form
-          key={frame?.versionId}
           className="frame-form fields"
-          onSubmit={submit}
+          onSubmit={(event) => void handleSubmit(submit)(event)}
           aria-busy={fieldsDisabled}
         >
           <fieldset className="fields" disabled={fieldsDisabled}>
@@ -171,22 +176,15 @@ export function FrameDialog({
             <label className="field">
               {editing ? 'Frame ID' : 'Frame ID (required)'}
               <input
-                ref={frameIdInput}
-                name="frameId"
+                {...register('frameId')}
                 readOnly={editing}
-                defaultValue={frame?.frameId}
                 required
                 maxLength={128}
               />
             </label>
             <div className="field">
               <label htmlFor="frame-status">Status (required)</label>
-              <select
-                id="frame-status"
-                name="status"
-                defaultValue={attributes?.status ?? ''}
-                required
-              >
+              <select id="frame-status" {...register('status')} required>
                 <option value="" disabled>
                   Choose a status
                 </option>
@@ -199,19 +197,19 @@ export function FrameDialog({
             </div>
             <label className="field">
               Status reason
-              <input name="statusReason" defaultValue={attributes?.statusReason ?? ''} />
+              <input {...register('statusReason')} />
             </label>
             <label className="field">
               Site number
-              <input name="siteNo" defaultValue={attributes?.siteNo ?? ''} />
+              <input {...register('siteNo')} />
             </label>
             <label className="field">
               Environment
-              <input name="environment" defaultValue={attributes?.environment ?? ''} />
+              <input {...register('environment')} />
             </label>
             <label className="field">
               Address
-              <input name="address" defaultValue={attributes?.address ?? ''} />
+              <input {...register('address')} />
             </label>
           </fieldset>
           <fieldset className="fields" disabled={fieldsDisabled}>
@@ -219,33 +217,19 @@ export function FrameDialog({
             <p className="subtle">Complete all four fields to add a location.</p>
             <label className="field">
               Country code
-              <input
-                name="countryCode"
-                maxLength={2}
-                pattern="[A-Za-z]{2}"
-                placeholder="GB"
-                defaultValue={attributes?.location?.countryCode ?? ''}
-              />
+              <input {...register('countryCode')} maxLength={2} pattern="[A-Za-z]{2}" placeholder="GB" />
             </label>
             <label className="field">
               Region
-              <input
-                name="region"
-                maxLength={128}
-                defaultValue={attributes?.location?.region ?? ''}
-              />
+              <input {...register('region')} maxLength={128} />
             </label>
             <label className="field">
               Town
-              <input name="town" maxLength={128} defaultValue={attributes?.location?.town ?? ''} />
+              <input {...register('town')} maxLength={128} />
             </label>
             <label className="field">
               Postcode
-              <input
-                name="postcode"
-                maxLength={32}
-                defaultValue={attributes?.location?.postcode ?? ''}
-              />
+              <input {...register('postcode')} maxLength={32} />
             </label>
           </fieldset>
           <fieldset className="fields" disabled={fieldsDisabled}>
@@ -253,11 +237,7 @@ export function FrameDialog({
             <p className="subtle">Complete all three fields to add a format.</p>
             <div className="field">
               <label htmlFor="frame-technology">Technology</label>
-              <select
-                id="frame-technology"
-                name="technology"
-                defaultValue={attributes?.format?.technology ?? ''}
-              >
+              <select id="frame-technology" {...register('technology')}>
                 <option value="">Choose a technology</option>
                 {FRAME_TECHNOLOGIES.map((technology) => (
                   <option key={technology} value={technology}>
@@ -268,19 +248,11 @@ export function FrameDialog({
             </div>
             <label className="field">
               Format code
-              <input
-                name="formatCode"
-                maxLength={128}
-                defaultValue={attributes?.format?.formatCode ?? ''}
-              />
+              <input {...register('formatCode')} maxLength={128} />
             </label>
             <label className="field">
               Size group code
-              <input
-                name="sizeGroupCode"
-                maxLength={128}
-                defaultValue={attributes?.format?.sizeGroupCode ?? ''}
-              />
+              <input {...register('sizeGroupCode')} maxLength={128} />
             </label>
           </fieldset>
           <fieldset className="fields" disabled={fieldsDisabled}>
@@ -288,49 +260,37 @@ export function FrameDialog({
             <label className="field">
               Number of slots
               <input
-                name="numberOfSlots"
+                {...register('numberOfSlots')}
                 type="number"
                 min={0}
                 max={MAX_SLOTS}
                 step={1}
-                defaultValue={attributes?.numberOfSlots ?? ''}
               />
             </label>
             <label className="field">
               Impact weight
-              <input
-                name="impactWeight"
-                inputMode="decimal"
-                maxLength={128}
-                defaultValue={attributes?.impactWeight ?? ''}
-              />
+              <input {...register('impactWeight')} inputMode="decimal" maxLength={128} />
             </label>
             <label className="field">
               Pricing grade
-              <input name="pricingGrade" defaultValue={attributes?.pricingGrade ?? ''} />
+              <input {...register('pricingGrade')} />
             </label>
             <label className="field">
               Production rate card
-              <input
-                name="productionRateCard"
-                defaultValue={attributes?.productionRateCard ?? ''}
-              />
+              <input {...register('productionRateCard')} />
             </label>
             <label className="field">
               Legacy production rate card
-              <input
-                name="productionRateCardLegacy"
-                defaultValue={attributes?.productionRateCardLegacy ?? ''}
-              />
+              <input {...register('productionRateCardLegacy')} />
             </label>
             <label className="check">
-              <input name="premium" type="checkbox" defaultChecked={attributes?.premium} />
+              <input {...register('premium')} type="checkbox" />
               Premium
             </label>
           </fieldset>
-          {error && (
+          {submitError && (
             <p className="error" role="alert">
-              {error}
+              {submitError}
             </p>
           )}
           {conflict && (

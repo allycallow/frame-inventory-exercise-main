@@ -1,12 +1,14 @@
 import { expect, test } from '@jest/globals'
-import { readCreateFrameInput, readUpdateFrameInput, type EditableFrame } from './frame-form-input'
+import {
+  frameFormValues,
+  readCreateFrameInput,
+  readUpdateFrameInput,
+  type EditableFrame,
+  type FrameFormValues,
+} from './frame-form-input'
 
-function form(values: Record<string, string> = {}): FormData {
-  const data = new FormData()
-  for (const [name, value] of Object.entries({ frameId: 'FRAME-1', status: 'DRAFT', ...values })) {
-    data.set(name, value)
-  }
-  return data
+function form(values: Partial<FrameFormValues> = {}): FrameFormValues {
+  return { ...frameFormValues(), frameId: 'FRAME-1', status: 'DRAFT', ...values }
 }
 
 test('accepts a frame ID and status without location, format or commercial details', () => {
@@ -28,7 +30,7 @@ test('normalizes text without losing a zero slot count or rounding the impact we
     sizeGroupCode: ' SMALL ',
     numberOfSlots: '0',
     impactWeight: ' 1.24000000000000001 ',
-    premium: 'on',
+    premium: true,
     pricingGrade: ' A ',
     productionRateCard: ' Standard ',
     productionRateCardLegacy: ' Legacy ',
@@ -70,7 +72,7 @@ test.each([
   [{ impactWeight: '1.0 kg' }, 'Enter a decimal number'],
   [{ impactWeight: '1e3' }, 'Enter a decimal number'],
   [{ impactWeight: '1'.repeat(129) }, 'Enter a decimal number'],
-] satisfies [Record<string, string>, string][])('rejects invalid input %j', (values, message) => {
+] satisfies [Partial<FrameFormValues>, string][])('rejects invalid input %j', (values, message) => {
   expect(readCreateFrameInput(form(values))).toEqual({ error: expect.stringContaining(message) })
 })
 
@@ -187,5 +189,21 @@ test('validates partial location and format edits before updating', () => {
   })
   expect(readUpdateFrameInput(form({ formatCode: 'D6' }), currentFrame)).toEqual({
     error: expect.stringContaining('Choose a technology'),
+  })
+})
+
+test('loaded edit values preserve zero slots, decimal precision and the premium checkbox', () => {
+  const values = frameFormValues(currentFrame)
+  expect(values).toMatchObject({
+    frameId: 'FRAME-1',
+    numberOfSlots: '0',
+    impactWeight: '2.40000000000000001',
+    premium: true,
+  })
+  expect(readUpdateFrameInput(values, currentFrame)).toMatchObject({
+    variables: {
+      expectedVersionId: currentFrame.versionId,
+      attributes: { numberOfSlots: 0, impactWeight: '2.40000000000000001', premium: true },
+    },
   })
 })
