@@ -1,133 +1,82 @@
 'use client'
 
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { createContext, useCallback, useContext, useMemo, useState, type ReactElement, type ReactNode } from 'react'
+import { createContext, useContext, useState, type ReactElement, type ReactNode } from 'react'
 import { FrameDialog } from './frame-dialog'
-import { InventoryImport } from './inventory-import'
-import { InventoryList } from './inventory-list'
 
-type InventoryActions = {
-  showImports: (jobId?: string) => void
-  addFrame: () => void
+type OpenFrameDialog = (frameId: string | undefined, onSaved: (id: string) => void) => void
+type ImportToken = { token: string; setToken: (token: string) => void }
+
+const FrameDialogContext = createContext<OpenFrameDialog | null>(null)
+const ImportTokenContext = createContext<ImportToken | null>(null)
+
+export function useFrameDialog(): OpenFrameDialog {
+  const openFrameDialog = useContext(FrameDialogContext)
+  if (!openFrameDialog) throw new Error('The frame dialog requires the inventory workspace.')
+  return openFrameDialog
 }
 
-const InventoryActionsContext = createContext<InventoryActions | null>(null)
-
-export function useInventoryActions(): InventoryActions {
-  const actions = useContext(InventoryActionsContext)
-  if (!actions) throw new Error('Inventory actions require the inventory workspace.')
-  return actions
+export function useImportToken(): ImportToken {
+  const importToken = useContext(ImportTokenContext)
+  if (!importToken) throw new Error('Import authorization requires the inventory workspace.')
+  return importToken
 }
 
-export function FrameListActions(): ReactElement {
-  const { showImports, addFrame } = useInventoryActions()
-  return (
-    <div className="actions">
-      <button className="button button-secondary" onClick={() => showImports()}>
-        Import CSV
-      </button>
-      <button className="button button-primary" onClick={addFrame}>
-        Add a frame
-      </button>
-    </div>
-  )
-}
+export function InventoryWorkspace({ children }: { children: ReactNode }): ReactElement {
+  const pathname = usePathname()
+  const [token, setToken] = useState('')
+  const [frameDialog, setFrameDialog] = useState<{
+    frameId: string | undefined
+    pathname: string
+    onSaved: (id: string) => void
+  } | null>(null)
 
-export function InventoryWorkspace({
-  children,
-  importsDisabled,
-}: {
-  children: ReactNode
-  importsDisabled: boolean
-}): ReactElement {
-  const showList = usePathname() === '/'
-  const [area, setArea] = useState<'frames' | 'imports'>('frames')
-  const [jobId, setJobId] = useState('')
-  const [frameDialog, setFrameDialog] = useState<{ frameId?: string } | null>(null)
-  const [savedFrame, setSavedFrame] = useState<{ frameId: string; action: 'created' | 'updated' } | null>(null)
-  const showImports = useCallback((id?: string): void => {
-    if (id) setJobId(id)
-    setArea('imports')
-  }, [])
-  const actions = useMemo<InventoryActions>(() => ({
-    showImports,
-    addFrame: () => setFrameDialog({}),
-  }), [showImports])
+  if (frameDialog && frameDialog.pathname !== pathname) setFrameDialog(null)
 
   return (
-    <InventoryActionsContext.Provider value={actions}>
-      <div className="workspace">
-        <header className="workspace-rail">
-          <div className="product">
-            <span className="product-mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <rect x="3" y="5" width="18" height="14" rx="1" />
-                <path d="M3 9h18" />
-              </svg>
-            </span>
-            Frame Inventory
-          </div>
-          <nav aria-label="Inventory navigation">
-            <button
-              aria-current={area === 'frames' ? 'page' : undefined}
-              onClick={() => setArea('frames')}
-            >
-              Frames
-            </button>
-            <button
-              aria-current={area === 'imports' ? 'page' : undefined}
-              onClick={() => showImports()}
-            >
-              Imports
-            </button>
-          </nav>
-        </header>
-        <main>
-          <section hidden={area !== 'frames'}>
-            {area === 'frames' && (
-              <>
-                {children}
-                <div hidden={!showList}>
-                  {savedFrame && (
-                    <p className="card panel-message frame-saved" role="status">
-                      Frame <strong>{savedFrame.frameId}</strong> was {savedFrame.action}.
-                    </p>
-                  )}
-                  <InventoryList active={showList} onEdit={(frameId) => setFrameDialog({ frameId })} />
-                </div>
-                {showList && frameDialog && (
-                  <FrameDialog
-                    frameId={frameDialog.frameId}
-                    onClose={() => setFrameDialog(null)}
-                    onSaved={(frameId) => {
-                      setSavedFrame({ frameId, action: frameDialog.frameId === undefined ? 'created' : 'updated' })
-                      setFrameDialog(null)
-                    }}
-                  />
-                )}
-              </>
-            )}
-          </section>
-          <section hidden={area !== 'imports'}>
-            <div className="page-heading">
-              <div>
-                <h1>Imports</h1>
-                {!importsDisabled && (
-                  <p className="subtle">Upload inventory CSV files and review import results.</p>
-                )}
-              </div>
+    <FrameDialogContext.Provider value={(frameId, onSaved) => setFrameDialog({ frameId, pathname, onSaved })}>
+      <ImportTokenContext.Provider value={{ token, setToken }}>
+        <div className="workspace">
+          <header className="workspace-rail">
+            <div className="product">
+              <span className="product-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <rect x="3" y="5" width="18" height="14" rx="1" />
+                  <path d="M3 9h18" />
+                </svg>
+              </span>
+              Frame Inventory
             </div>
-            {importsDisabled ? (
-              <p className="card panel-message" role="status">
-                CSV imports are disabled because the local import token is missing.
-                Run <code>just up</code> from the repository root to enable them.
-              </p>
-            ) : (
-              <InventoryImport trackedId={jobId} onTrack={setJobId} />
-            )}
-          </section>
-        </main>
-      </div>
-    </InventoryActionsContext.Provider>
+            <nav aria-label="Inventory navigation">
+              <Link
+                href="/frames"
+                aria-current={pathname === '/frames' || pathname.startsWith('/frames/') ? 'page' : undefined}
+              >
+                Frames
+              </Link>
+              <Link
+                href="/imports"
+                aria-current={pathname === '/imports' || pathname.startsWith('/imports/') ? 'page' : undefined}
+              >
+                Imports
+              </Link>
+            </nav>
+          </header>
+          <main>{children}</main>
+          {frameDialog && frameDialog.pathname === pathname && (
+            <FrameDialog
+              frameId={frameDialog.frameId}
+              refetchFrameList={pathname === '/frames'}
+              onClose={() => setFrameDialog(null)}
+              onSaved={(id) => {
+                setFrameDialog((current) => current === frameDialog ? null : current)
+                frameDialog.onSaved(id)
+              }}
+            />
+          )}
+        </div>
+      </ImportTokenContext.Provider>
+    </FrameDialogContext.Provider>
   )
 }

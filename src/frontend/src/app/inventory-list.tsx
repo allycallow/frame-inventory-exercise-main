@@ -18,8 +18,7 @@ export function StatusChip({ value }: { value: string }): ReactElement {
   )
 }
 
-export function InventoryList({ active, onEdit }: {
-  active: boolean
+export function InventoryList({ onEdit }: {
   onEdit: (frameId: string) => void
 }): ReactElement {
   const [variables, setVariables] = useState<FramesQueryVariables>({ page: 0 })
@@ -78,7 +77,6 @@ export function InventoryList({ active, onEdit }: {
       </form>
       <div className="card">
         <FrameResults
-          active={active}
           onEdit={onEdit}
           variables={variables}
           onPage={(page) => setVariables((current) => ({ ...current, page }))}
@@ -89,12 +87,10 @@ export function InventoryList({ active, onEdit }: {
 }
 
 function FrameResults({
-  active,
   variables,
   onPage,
   onEdit,
 }: {
-  active: boolean
   variables: FramesQueryVariables
   onPage: (page: number) => void
   onEdit: (frameId: string) => void
@@ -102,12 +98,9 @@ function FrameResults({
   const { page, search, statuses } = variables
   const { data, loading, error, refetch } = useQuery(FramesDocument, {
     variables,
-    skip: !active,
     fetchPolicy: 'network-only',
     ssr: false,
   })
-
-  if (!active) return <></>
 
   if (loading)
     return (

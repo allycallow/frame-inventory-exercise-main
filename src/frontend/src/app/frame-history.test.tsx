@@ -160,8 +160,9 @@ test('reports link additions and removals by occurrence and a reorder as one cha
 })
 
 test('renders the timeline, explains changes and toggles additional fields', async () => {
+  const jobId = '12345678-1234-1234-1234-123456789abc'
   const created = version({ location, format, status: 'PENDING' }, {
-    changeSource: 'CSV_IMPORT', importJobId: 'JOB-1', current: false, validTo: '2026-10-02T12:00:00Z',
+    changeSource: 'CSV_IMPORT', importJobId: jobId, current: false, validTo: '2026-10-02T12:00:00Z',
   })
   const edit = version({
     ...created.attributes, status: 'LIVE', statusReason: 'Approved', siteNo: '1',
@@ -174,14 +175,13 @@ test('renders the timeline, explains changes and toggles additional fields', asy
     versionId: '3', validFrom: edit.validTo ?? edit.validFrom, validTo: '2026-10-04T12:00:00Z',
     changeSource: 'FORCED_OVERWRITE', importJobId: 'JOB-2', closedByChangeSource: 'MANUAL_DELETE', current: false,
   })
-  const onJob = jest.fn()
 
   render(
     <MockedProvider mocks={[{
       request: { query: FrameHistoryDocument, variables: { id: 'FRAME-1' } },
       result: { data: { frameHistory: [overwritten, edit, created] } },
     }]}>
-      <HistoryDialog frameId="FRAME-1" onClose={jest.fn()} onJob={onJob} />
+      <HistoryDialog frameId="FRAME-1" onClose={jest.fn()} />
     </MockedProvider>,
   )
 
@@ -211,6 +211,5 @@ test('renders the timeline, explains changes and toggles additional fields', asy
   expect(initial.getByText('Location: Camden, London, NW1, GB')).toBeDefined()
   expect(initial.getByText('Format: DIGITAL, D6, 6S')).toBeDefined()
   expect(initial.getByText('Csv import')).toBeDefined()
-  fireEvent.click(initial.getByRole('button', { name: 'Import job JOB-1' }))
-  expect(onJob).toHaveBeenCalledWith('JOB-1')
+  expect(initial.getByRole('link', { name: `Import job ${jobId}` }).getAttribute('href')).toBe(`/imports/${jobId}`)
 })

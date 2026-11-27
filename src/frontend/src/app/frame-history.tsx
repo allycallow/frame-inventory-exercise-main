@@ -1,11 +1,13 @@
 'use client'
 
 import { useQuery } from '@apollo/client/react'
+import Link from 'next/link'
 import { Fragment, useEffect, useId, useRef, useState, type ReactElement } from 'react'
 import { FrameHistoryDocument } from '../generated/graphql'
 import { diffVersions, type FieldChange } from './frame-history-diff'
 import { dateTime, errorMessage, label } from './inventory-api'
 import { StatusChip } from './inventory-list'
+import { importJobHref } from './imports/import-route'
 
 const INITIAL_CHANGE_LIMIT = 5
 
@@ -49,11 +51,9 @@ function VersionChanges({ changes }: { changes: FieldChange[] }): ReactElement {
 export function HistoryDialog({
   frameId,
   onClose,
-  onJob,
 }: {
   frameId: string
   onClose: () => void
-  onJob: (jobId: string) => void
 }): ReactElement {
   const dialog = useRef<HTMLDialogElement>(null)
   const { data, loading, error } = useQuery(FrameHistoryDocument, {
@@ -136,9 +136,13 @@ export function HistoryDialog({
                       </>
                     )}
                     {importJobId && (
-                      <button className="text-button job-link" onClick={() => onJob(importJobId)}>
+                      <Link
+                        className="text-button job-link"
+                        href={importJobHref(importJobId)}
+                        onNavigate={onClose}
+                      >
                         Import job <span className="mono">{importJobId}</span>
-                      </button>
+                      </Link>
                     )}
                   </li>
                 </Fragment>
