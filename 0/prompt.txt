@@ -1,0 +1,17 @@
+pick this ticket up https://linear.app/upfrontbeats/issue/GLO-65/give-frames-and-imports-their-own-routes-frames-imports
+
+---
+
+nice open PR
+
+---
+
+resovle merge conflicts
+
+---
+
+can re appply those changes and commit the new read me to that PR
+
+---
+
+this docs: document inventory design decisions should not be in this pr it should be in https://github.com/allycallow/frame-inventory-exercise-main/pull/41
