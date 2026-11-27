@@ -3,7 +3,7 @@
   "checkpoint_id": "01M8ECYGBYPPJB3Y2T95EXST75",
   "strategy": "manual-commit",
   "branch": "alex/glo-50-implement-react-hook-from",
-  "checkpoints_count": 8,
+  "checkpoints_count": 10,
   "files_touched": [
     "src/frontend/package-lock.json",
     "src/frontend/package.json",
@@ -20,24 +20,31 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 114,
-    "cache_creation_tokens": 58881,
-    "cache_read_tokens": 13521082,
-    "output_tokens": 27734,
-    "api_call_count": 38
+    "input_tokens": 144,
+    "cache_creation_tokens": 61396,
+    "cache_read_tokens": 14890956,
+    "output_tokens": 28421,
+    "api_call_count": 48
   },
   "redaction": {
-    "replacements": 65,
+    "replacements": 67,
     "layers": {
       "betterleaks": 4,
       "connection_string": 0,
       "credential_key": 0,
       "credential_value": 38,
       "credentialed_uri": 0,
-      "entropy": 23,
+      "entropy": 25,
       "key_context": 0,
       "provider_token": 0,
       "shell_stdin": 0
